@@ -1,0 +1,15 @@
+# The OpenAQ API key is a credential. Committing one is an automatic deduction
+# under the capstone brief, so the file that holds it never enters git.
+.env
+secrets.env
+
+# Downloaded measurements. These are versioned with DVC, not with git — a 6-month
+# history of hourly readings is far too large for a repository.
+data/raw/
+data/interim/
+*.parquet
+
+__pycache__/
+*.pyc
+.ipynb_checkpoints/
+.venv/

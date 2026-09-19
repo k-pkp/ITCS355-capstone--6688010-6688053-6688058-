@@ -1,0 +1,6 @@
+# Pinned exactly, because "it worked on my laptop" is the failure this course opens with.
+pandas==2.4.1
+numpy==2.4.4
+requests==2.33.0
+scikit-learn==1.8.2
+pytest==9.1.1
