@@ -16,3 +16,6 @@ __pycache__/
 .venv/
 reports/pdf/
 reports/bank-model.joblib
+mlflow.db
+mlruns/
+mlartifacts/
