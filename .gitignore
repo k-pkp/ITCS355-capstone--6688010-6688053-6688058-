@@ -6,6 +6,7 @@ secrets.env
 # Downloaded measurements. These are versioned with DVC, not with git — a 6-month
 # history of hourly readings is far too large for a repository.
 data/raw/
+data/bank/*.csv
 data/interim/
 *.parquet
 

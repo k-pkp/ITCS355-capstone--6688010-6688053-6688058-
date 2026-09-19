@@ -1,0 +1,11 @@
+{
+  "downloaded_at_utc": "2026-09-19T21:21:37.385496+00:00",
+  "source_url": "https://archive.ics.uci.edu/static/public/222/bank+marketing.zip",
+  "file": "bank-additional-full.csv",
+  "variant": "bank-additional-full",
+  "rows": 41188,
+  "sha256": "74adfc578bf77a7ff4bb1ba4a9f8709d9e3c6907342959c2c8416847e0afb4d8",
+  "licence": "CC BY 4.0",
+  "citation": "Moro, S., Rita, P., and Cortez, P. (2014). Bank Marketing [Dataset]. UCI Machine Learning Repository. https://doi.org/10.24432/C5K306",
+  "why_this_variant": "It carries the macroeconomic columns recorded at call time. The campaign ran May 2008 to November 2010 in time order, so those columns contain a real distribution shift rather than a simulated one."
+}
