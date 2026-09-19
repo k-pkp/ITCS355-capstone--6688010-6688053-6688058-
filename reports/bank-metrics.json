@@ -1,0 +1,12 @@
+{
+  "seed": 20260101,
+  "call_budget": 500,
+  "train_rows": 24712,
+  "test_rows": 8239,
+  "train_subscribe_rate": 0.04807381029459372,
+  "test_subscribe_rate": 0.30828984100012136,
+  "model_lift": 1.3428921259842521,
+  "baseline_file_order_lift": 0.20759685039370082,
+  "baseline_euribor_lift": 1.8034976377952758,
+  "leaky_duration_lift": 2.1732795275590555
+}
