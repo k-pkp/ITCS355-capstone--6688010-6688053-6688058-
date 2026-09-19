@@ -1,0 +1,56 @@
+{
+  "screened_at_utc": "2026-09-19T19:47:09.366163+00:00",
+  "pinned_stations": 40,
+  "excluded_stations": 5,
+  "usable_stations": 35,
+  "thresholds": {
+    "maximum_zero_rate": 0.05,
+    "maximum_flat_run_hours": 24
+  },
+  "exclusions": [
+    {
+      "location_id": 1236050,
+      "reason": "implausible_zero_rate",
+      "detail": "reports an exact zero in 8.1% of readings, above the 5% limit; a true zero outdoors is not a measurement",
+      "evidence": {
+        "zero_rate": 0.0805,
+        "row_count": 4297
+      }
+    },
+    {
+      "location_id": 2142493,
+      "reason": "implausible_zero_rate",
+      "detail": "reports an exact zero in 17.8% of readings, above the 5% limit; a true zero outdoors is not a measurement",
+      "evidence": {
+        "zero_rate": 0.1779,
+        "row_count": 4256
+      }
+    },
+    {
+      "location_id": 2142801,
+      "reason": "no_readings",
+      "detail": "pinned but returned no data at all",
+      "evidence": {
+        "row_count": 0
+      }
+    },
+    {
+      "location_id": 2165656,
+      "reason": "implausible_zero_rate",
+      "detail": "reports an exact zero in 7.7% of readings, above the 5% limit; a true zero outdoors is not a measurement",
+      "evidence": {
+        "zero_rate": 0.0775,
+        "row_count": 3589
+      }
+    },
+    {
+      "location_id": 2457250,
+      "reason": "stuck_sensor",
+      "detail": "held the same value for 52 consecutive hours; the air does not stand still for a day",
+      "evidence": {
+        "longest_flat_run_hours": 52,
+        "value_during_run": 9.5
+      }
+    }
+  ]
+}

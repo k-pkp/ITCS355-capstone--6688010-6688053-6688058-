@@ -155,10 +155,10 @@ switched off. Those are handled in Step 3.
 
 ---
 
-### Step 3 — Quality screen (not yet built)
+### Step 3 — Quality screen
 
-**What.** A per-station screen that decides which stations are fit to train on, writes the
-exclusions and the reason to a file, and is re-run when the dataset changes.
+**What.** `src/quality.py` screens each station and `scripts/screen_stations.py` writes
+`data/excluded_stations.json` with the reason and the evidence for every exclusion.
 
 **Why it is needed.** Contract failures mean *the feed broke*. Quality failures mean *this
 sensor is bad*. They need different responses: stop everything, versus drop one station and
@@ -169,18 +169,33 @@ zero 17.8% of the time, teaches the model that clean air is common at that locat
 opposite error: failing the whole build because one sensor is broken, which means nobody can
 ship anything until a third party fixes hardware we do not own.
 
-**How we will know it is right.** The exclusions are written to a file with reasons, and the
-count of excluded stations becomes a monitored metric. If it climbs, the network is
-degrading and somebody should know.
+**How we know it is right.** Both thresholds sit inside a wide gap between the faulty
+stations and the rest, so the answer does not depend on the exact number chosen.
 
-**Known candidates from the profile:**
+*Zero rate, limit 5%.* The three worst stations are at 17.79%, 8.05% and 7.75%; the fourth
+is at 1.48%. Any threshold between 1.5% and 7.7% selects the same three.
 
-| Station | Evidence |
-|---|---|
-| 2142493 | exact zero in 17.8% of readings |
-| 2457250 | 135 readings above 1000 µg/m³ in a month whose median is 12.5, then silent 57 days |
-| 2165656 | 278 zeros and 16 extremes |
-| 2142801 | pinned but returned no data at all |
+*Flat run, limit 24 hours.* Half of all stations never hold a value for more than 5 hours
+and 95% stay under 15. The one faulty station ran 52; the next highest is 21.
+
+The tests check both directions: each fault is caught, and a healthy station with a few
+zeros or a few still hours is **not** excluded. A screen that excludes everything is as
+useless as one that excludes nothing, and easier to write by accident.
+
+**Result — 5 of 40 stations excluded, 35 usable:**
+
+| Station | Reason | Evidence |
+|---|---|---|
+| 2142493 | implausible zero rate | exact zero in 17.8% of readings |
+| 1236050 | implausible zero rate | 8.1% |
+| 2165656 | implausible zero rate | 7.7% |
+| 2457250 | **stuck sensor** | held one value for 52 consecutive hours |
+| 2142801 | no readings | pinned but returned nothing |
+
+**The exclusions live in a file, not in the training script.** A reviewer can see what was
+dropped without reading code; the count becomes a monitored metric, so a fleet that is
+quietly degrading is visible; and a station that recovers is readmitted by re-running the
+screen rather than by someone remembering a hard-coded list exists.
 
 ---
 
@@ -296,9 +311,33 @@ So 2 hours catches an outage an hour sooner, at a false-alarm cost of 0.07 perce
 points. A gate that fires during healthy operation gets switched off — and an ignored gate
 is worse than no gate, because it also claims somebody is watching.
 
-**We do not need to fake it.** Station 2457250 spiked above 1000 µg/m³ for 135 readings in a
-month whose median is 12.5, then went silent for 57 days. The demo can point at a real
-station and say: this one lied to us, then disappeared.
+**We do not need to fake it.** Station 2457250 is real, and it failed in both ways.
+
+### The gap this design originally had
+
+Investigating that station changed the design. It did not merely spike — it sat at a median
+of **1,680 µg/m³ for eight consecutive days** while every other station's p95 stayed under
+60. That is a sensor stuck near its maximum, and the important part is this:
+
+**A stuck sensor passes the staleness gate.** It reports fresh timestamps the whole time.
+The data is current and completely wrong.
+
+The original design checked whether data was *recent* and never whether it was *plausible*,
+so this failure would have walked straight through it. The fleet has therefore two distinct
+failures, needing two distinct controls:
+
+| Failure | Looks like | Caught by |
+|---|---|---|
+| Station goes silent | no new readings | **staleness gate** — timestamp older than 2h |
+| Station freezes | fresh readings, identical values | **flat-run check** — same value ≥ 24h |
+
+Both controls belong in the hourly job, not only in the training screen, because both
+failures happen live. The demo is stronger for it: we can show a station that disappears and
+a station that lies, and show that only one of them is caught by the obvious defence.
+
+Worth noting what did *not* catch the stuck sensor: the value 1,680 is under the contract's
+physical ceiling of 2,000, so a range check passed it. It was only detectable by comparing
+the station against itself over time, or against its neighbours.
 
 ---
 
@@ -420,8 +459,8 @@ they are the reason this design differs from the obvious one.
 | 0 Pin stations and licences | **done** — 40 pinned, all CC BY 4.0 |
 | 1 Download and version history | **done** — 155,109 rows, DVC round trip verified |
 | 2 Data contract | **done** — 14 tests, mutation-checked |
-| 3 Quality screen | next |
-| 4 Features | not started |
+| 3 Quality screen | **done** — 5 of 40 excluded, thresholds measured |
+| 4 Features | next |
 | 5 Train against baseline | baseline measured, model not started |
 | 6 Registry and lineage | not started |
 | 7 Hourly batch job | not started |
@@ -435,9 +474,9 @@ they are the reason this design differs from the obvious one.
 
 ## 7. Open questions
 
-1. **Station 2142801** is pinned but returned no data. Drop it and say so, or leave it
-   pinned and let the quality screen exclude it? Either is defensible; silently ignoring it
-   is not.
+1. ~~Station 2142801~~ — **decided**: left pinned, excluded by the quality screen with the
+   reason recorded. It stays in the licence record and is accounted for, rather than
+   vanishing from the station count.
 2. **Forecast horizon.** Six hours is chosen because it is long enough to change an afternoon
    plan. It has not been tested against how far ahead the signal actually persists.
 3. **Approval.** The proposal has not been approved yet. Steps 0–2 would transfer unchanged
