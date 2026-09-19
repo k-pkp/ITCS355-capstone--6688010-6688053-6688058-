@@ -15,9 +15,9 @@ from pathlib import Path
 import pandas as pd
 import pytest
 
-from src import contract
+from src.airquality import contract
 
-PROJECT_ROOT = Path(__file__).resolve().parents[1]
+PROJECT_ROOT = Path(__file__).resolve().parents[2]
 RAW_DIR = PROJECT_ROOT / "data" / "raw"
 STATIONS_FILE = PROJECT_ROOT / "data" / "stations.json"
 

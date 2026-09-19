@@ -11,7 +11,7 @@ import numpy as np
 import pandas as pd
 import pytest
 
-from src import quality
+from src.airquality import quality
 
 
 def make_station_readings(location_id: int, values: list[float]) -> pd.DataFrame:

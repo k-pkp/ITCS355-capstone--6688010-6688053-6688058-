@@ -14,7 +14,7 @@ from __future__ import annotations
 import pandas as pd
 import pytest
 
-from src import contract
+from src.airquality import contract
 
 
 def make_clean_readings(hours: int = 24 * 40, station_count: int = 2) -> pd.DataFrame:
