@@ -1,0 +1,83 @@
+# Cost report
+
+Rates verified against the Cloud Billing Catalog for `asia-southeast1` during Lab 5 and
+reused unchanged. Converted at 1 USD = 32.921586 THB.
+
+## 1. Estimate, made before building
+
+**4.60 THB per month.** The forecast is below, and section 3 compares it with what the
+design actually implies.
+
+## 2. What the system costs to run
+
+| Line | Basis | THB / month |
+|---|---|--:|
+| Nightly scoring batch | 30 runs × ~60 s on spot `e2-standard-4` at 3.860 THB/h | 1.93 |
+| Weekly retraining | 4 runs × ~3 min on spot | 0.77 |
+| Object storage | dataset, DVC remote, published call lists | ~0.20 |
+| Container registry | one image, retention policy on untagged versions | ~1.70 |
+| Monitoring, alerting, scheduler | 6 custom metrics, one policy, one schedule | 0.00 |
+| **Total** | | **~4.60** |
+
+## 3. The decision that dominates the bill
+
+The entire cost argument of this project is one choice, and it is worth stating as a
+comparison rather than as a total:
+
+| Serving pattern | THB / month | Ratio |
+|---|--:|--:|
+| Always-on managed endpoint, `n1-standard-4` | ~6,400 | 1,400× |
+| **Nightly batch on spot (chosen)** | **1.93** | 1× |
+
+An endpoint bills **8.889 THB per hour whether or not anything calls it**. This workload is
+41,188 predictions once a day — 0.48 per second averaged out — and nobody waits on any of
+them: agents read the list at 08:00 whether it was computed at 02:00 or at 07:59.
+
+Buying an endpoint here would cost roughly 1,400 times more to deliver a result nobody
+reads any sooner.
+
+## 4. Cost per 1,000 predictions
+
+41,188 customers scored per run at 0.064 THB gives **0.0016 THB per 1,000 predictions**.
+
+That number is almost meaningless on its own, and it is included because the brief asks for
+it. Three utilisation assumptions would produce three different answers, and none of them
+would change any decision: the workload is a fixed nightly batch, so cost scales with the
+number of runs and not with utilisation at all.
+
+The figure that does change decisions is the one in section 3.
+
+## 5. What Lab 5 taught that this project applies from day one
+
+**The registry is a cost, and debugging is what grows it.** In Lab 5 the container registry
+reached 3.17 GB and became the second largest line in the bill. 0.9 GB of that arrived in a
+single afternoon, from pushing the same tag three times while fixing a pipeline — each push
+left the previous version behind as an untagged image. A debugging session is a storage
+cost.
+
+So this project sets a retention policy on untagged versions before the first image is
+pushed, rather than after discovering the bill.
+
+**Budget the thing that bills by the hour.** Everything else on this list is rounding error.
+In Lab 5 a Vertex endpoint accounted for 46% of the entire project bill for 1.45 hours of
+existence, while every training job, every image and every byte of storage together came to
+less.
+
+## 6. One optimisation, applied
+
+**Spot compute for both the nightly batch and retraining**, at 3.860 THB/h against 7.076
+on-demand — a 45% discount.
+
+The trade is that Google can reclaim the machine with little warning. It is acceptable here
+because the job is idempotent and short: a reclaimed run is re-run from the same input and
+produces the same list, and the schedule has two hours of slack before the 06:00 deadline.
+
+A job that could not be safely re-run would not be a candidate for spot, and the discount
+would be worth nothing.
+
+## 7. Honest limits
+
+No figure here has been reconciled against an invoice. This project has not yet been
+deployed to the cloud, so every number is a projection from measured Lab 5 rates rather
+than a billed amount. The rates are real and were verified against the Billing Catalog; the
+quantities are estimates from local runs.

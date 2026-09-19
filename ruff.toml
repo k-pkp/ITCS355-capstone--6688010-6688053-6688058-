@@ -1,0 +1,9 @@
+# Line length matches the width the rest of the project is written to.
+line-length = 96
+
+[lint]
+select = ["E", "F", "W", "I"]
+# Scripts insert the project root on sys.path before importing from it, which ruff reads
+# as an import that is not at the top of the file. The alternative is installing the
+# package to run a script, which is a worse trade for a project of this size.
+ignore = ["E402"]

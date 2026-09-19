@@ -1,0 +1,9 @@
+dvc==3.67.1
+joblib==1.4.2
+mlflow==3.16.0
+numpy==2.4.4
+pandas==3.0.2
+pytest==9.1.1
+requests==2.33.0
+ruff==0.16.6
+scikit-learn==1.8.0

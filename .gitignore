@@ -19,3 +19,5 @@ reports/bank-model.joblib
 mlflow.db
 mlruns/
 mlartifacts/
+data/bank/call-lists/
+data/bank/demo/

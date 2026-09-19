@@ -222,8 +222,9 @@ def parse_markdown(source: str, styles: dict, mono_font: str,
         if stripped.startswith("#"):
             level = len(stripped) - len(stripped.lstrip("#"))
             key = {1: "h1", 2: "h2"}.get(level, "h3")
-            flowables.append(Paragraph(
-                to_inline_markup(stripped.lstrip("#").strip(), mono_font, substitute), styles[key]))
+            heading_text = to_inline_markup(stripped.lstrip("#").strip(), mono_font,
+                                            substitute)
+            flowables.append(Paragraph(heading_text, styles[key]))
             index += 1
             continue
 
@@ -246,7 +247,8 @@ def parse_markdown(source: str, styles: dict, mono_font: str,
                     table_rows.append(cells)
                 index += 1
             if table_rows:
-                flowables.append(KeepTogether(make_table(table_rows, styles, mono_font, substitute)))
+                table = make_table(table_rows, styles, mono_font, substitute)
+                flowables.append(KeepTogether(table))
                 flowables.append(Spacer(1, 3 * mm))
             continue
 
@@ -262,9 +264,10 @@ def parse_markdown(source: str, styles: dict, mono_font: str,
                 item_lines.append(follow.strip())
                 index += 1
             marker = "•" if bullet_match.group(1) in "-*" else bullet_match.group(1)
-            flowables.append(Paragraph(
-                to_inline_markup(" ".join(item_lines), mono_font, substitute),
-                styles["bullet"], bulletText=marker))
+            bullet_text = to_inline_markup(" ".join(item_lines), mono_font,
+                                           substitute)
+            flowables.append(Paragraph(bullet_text, styles["bullet"],
+                                       bulletText=marker))
             continue
 
         paragraph_lines = []

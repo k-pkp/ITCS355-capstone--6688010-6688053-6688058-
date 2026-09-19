@@ -1,0 +1,42 @@
+# CI for the call-list ranker.
+#
+# The order is deliberate: the cheapest checks that can fail run first, so a broken data
+# contract is reported in seconds rather than after a model has been trained. Every job
+# below can fail, and each one has been seen to fail on something real.
+name: CI
+
+on:
+  push:
+    branches: ["**"]
+  pull_request:
+
+jobs:
+  test:
+    name: lint and test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install pandas numpy scikit-learn joblib pytest ruff
+
+      - name: Lint
+        run: ruff check src scripts tests
+
+      # The data contract and the feature guards do not need the dataset: they run against
+      # synthetic frames built in the tests. Tests that do need the real file skip
+      # themselves rather than failing, so CI stays green on a machine with no DVC remote
+      # access while still running every rule.
+      - name: Tests
+        run: pytest -q
+
+      - name: Confirm the leakage guard is present
+        run: |
+          pytest -q tests/bank/test_features.py::test_duration_never_reaches_the_model
+          pytest -q tests/bank/test_splits.py -k "shuffle or chronological"

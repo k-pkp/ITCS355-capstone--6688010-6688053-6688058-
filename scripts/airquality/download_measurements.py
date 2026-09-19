@@ -130,7 +130,8 @@ def main() -> int:
 
     for index, station in enumerate(stations, start=1):
         target = options.out_dir / f"station-{station['location_id']}.csv"
-        label = f"[{index}/{len(stations)}] {station['location_id']} {station.get('name') or ''}"
+        label = (f"[{index}/{len(stations)}] {station['location_id']} "
+                 f"{station.get('name') or ''}")
 
         if target.exists() and not options.force:
             print(f"{label}: already downloaded, skipping")

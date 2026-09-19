@@ -1,0 +1,27 @@
+{
+  "checked_at_utc": "2026-09-19T23:44:48.765833+00:00",
+  "project": "itcs355-6688010",
+  "region": "asia-southeast1",
+  "findings": {
+    "vertex_endpoints": {
+      "checked": true,
+      "count": 0,
+      "resources": []
+    },
+    "vertex_models": {
+      "checked": true,
+      "count": 0,
+      "resources": []
+    },
+    "scheduler_jobs": {
+      "checked": true,
+      "count": 0,
+      "resources": []
+    }
+  },
+  "still_running": [],
+  "deliberately_kept": {
+    "dvc_remote": "gs://itcs355-6688010/capstone/dvc",
+    "why": "object storage holding the versioned dataset. Costs fractions of a baht per month, and a teardown that can delete the data is a teardown nobody dares run."
+  }
+}
