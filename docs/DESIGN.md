@@ -456,21 +456,28 @@ they are the reason this design differs from the obvious one.
 
 | Step | State |
 |---|---|
-| 0 Pin stations and licences | **done** — 40 pinned, all CC BY 4.0 |
-| 1 Download and version history | **done** — 155,109 rows, DVC round trip verified |
-| 2 Data contract | **done** — 14 tests, mutation-checked |
-| 3 Quality screen | **done** — 5 of 40 excluded, thresholds measured |
-| 4 Features | next |
-| 5 Train against baseline | baseline measured, model not started |
-| 6 Registry and lineage | not started |
-| 7 Hourly batch job | not started |
-| 8 Staleness gate | designed, threshold measured, not built |
-| 9 Monitoring and drift | not started |
-| 10 CI/CD | not started |
-| 11 Cost accounting | rates known from Lab 5 |
-| 12 Teardown | not started |
+| 0 Data acquisition | **done** — 41,188 rows, CC BY 4.0, SHA-256 recorded |
+| 1 Versioning | **done** — DVC, pushed to GCS |
+| 2 Data contract | **done** — 7 rules, mutation-checked |
+| 3 Quality screen | not needed for a curated dataset; the air quality version stands as the worked example |
+| 4 Features | **done** — `duration` excluded, `pdays` sentinel split, vocabulary-driven columns |
+| 5 Train against baselines | **done** — the model loses, 1.34x against 1.80x |
+| 6 Registry and lineage gate | **done** — refuses the current model, margin measured from seed noise |
+| 7 Nightly batch job | **done** |
+| 8 The deliberate failure | **done** — demonstrated both ways on the same file |
+| 9 Monitoring and drift | **done** — 6 of 7 columns alerting; found a bug in the detector |
+| 10 CI/CD | **done** — lint, tests, leakage guard called out |
+| 11 Cost accounting | **done** — 1,400x between an endpoint and a nightly batch |
+| 12 Teardown | **done** — nothing billing; the DVC remote kept on purpose |
 
----
+**Note on the topic.** This design was written for the air quality nowcast and the project
+moved to the bank dataset. The step structure, the principles and every lab finding cited
+carry over unchanged, which is itself the useful observation: the design was about the
+operational system, not about the data. Where the bank project differs —
+`duration` instead of cross-station lags, a staged stale file instead of a dropped sensor —
+the differences are written up in [`DESIGN-BANK.md`](DESIGN-BANK.md), and the parts of this
+document that describe air quality specifics now describe the alternative rather than the
+main line.
 
 ## 7. Open questions
 
