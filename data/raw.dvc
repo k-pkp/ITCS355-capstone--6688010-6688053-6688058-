@@ -1,0 +1,6 @@
+outs:
+- md5: 1f6e5c097a66e995b1fee33d44689afb.dir
+  size: 16023326
+  nfiles: 39
+  hash: md5
+  path: raw
