@@ -146,16 +146,6 @@ many subscribe* — against two baselines that already exist: calling in file or
 ranking by a single column. An evaluation gate refuses to register a model that does not
 beat them by more than seed noise.
 
-## Who owns what
-
-| Area | Owner |
-|---|---|
-| Repository, pipeline and documentation | Pakkapol Boonluck (6688010) |
-| Review and presentation | Kritchanat Kulwanich (6688053) · Patcharapol Luksanakam (6688058) |
-
-Work is tracked in the repository's commit history, so who did what is a matter of record
-rather than of memory.
-
 ## What we are deliberately not doing
 
 No deep learning, no feature store, no real-time serving. Model accuracy carries no marks,
