@@ -47,7 +47,7 @@ The one-page proposal, as submitted at M2, is [`PROPOSAL.md`](PROPOSAL.md).
 pip install -r requirements.txt
 
 python scripts/download_bank_data.py      # or: dvc pull
-pytest -q                                 # 82 tests
+pytest -q                                 # 59 tests
 python scripts/train_bank.py              # trains and scores against baselines
 python scripts/register_bank_model.py     # asks the gate; currently refused
 python scripts/check_drift.py             # 6 of 7 columns alerting
@@ -161,16 +161,10 @@ per second that nobody waits for. Full working: [`reports/cost-report.md`](repor
 
 ```
 src/bank/          contract, splits, features, evaluate, gate, freshness, monitoring
-src/airquality/    the alternative topic that was evaluated first
 scripts/           download, train, register, score_nightly, check_drift, demos
-tests/bank/        59 tests   tests/airquality/  23 tests
+tests/             59 tests
 reports/           training, drift, gate decision, cost, model card, the demo
 ```
-
-`src/airquality/` is a six-hour PM2.5 nowcast taken as far as 155,109 versioned readings, a
-profile, and a quality screen that found five faulty sensors — including one reporting a
-constant 1,680 µg/m³ for eight days while producing fresh timestamps. It is kept because
-the alternative considered is part of the reasoning, and its 23 tests still pass.
 
 The reasoning behind each step — what it is, why it is needed, what breaks without it, and
 how the choice was checked — is recorded in the project's commit messages, and the measured
@@ -193,9 +187,9 @@ silent:
    registration and the bug was fixed instead of shipped.
 3. **The model lost to a single column**, which nobody would have known without measuring a
    baseline first.
-4. **In the air quality work**, a sensor stuck at 1,680 µg/m³ for eight days passed every
-   freshness check, because it kept reporting current timestamps. Freshness and
-   plausibility are different questions.
+4. **An empty export crashed the nightly job**, reaching the model and raising a library
+   error about array shapes — a stack trace saying nothing about the export having failed,
+   arriving for whoever is on call. It is now a contract rule with a readable refusal.
 
 ---
 
