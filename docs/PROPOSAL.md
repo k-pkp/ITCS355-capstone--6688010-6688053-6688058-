@@ -146,6 +146,20 @@ many subscribe* — against two baselines that already exist: calling in file or
 ranking by a single column. An evaluation gate refuses to register a model that does not
 beat them by more than seed noise.
 
+## The work
+
+| Area | What it covers |
+|---|---|
+| Data and reproducibility | Acquisition with licence and SHA-256 recorded, DVC versioning, the seven-rule data contract, the time-ordered split |
+| Modelling and evaluation | Feature building with the leakage guards, training, the two baselines, lift at a call budget |
+| Release control | The evaluation gate and the lineage it requires before a model may be registered |
+| Operations | The nightly batch job, the freshness gate, and the failure demonstration |
+| Monitoring | Drift scoring across seven columns, per-run metrics, the teardown check |
+| Documentation | README, design, glossary, cost report, model card, this proposal |
+
+Every change is recorded in the repository's commit history with its author and timestamp,
+so the record of who did what is in the repository rather than in this table.
+
 ## What we are deliberately not doing
 
 No deep learning, no feature store, no real-time serving. Model accuracy carries no marks,
