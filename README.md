@@ -37,6 +37,10 @@ Reproduce it: `python scripts/demo_stale_input.py`.
 
 ---
 
+The one-page proposal, as submitted at M2, is [`PROPOSAL.md`](PROPOSAL.md).
+
+---
+
 ## Reproduce everything
 
 ```bash
