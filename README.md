@@ -43,7 +43,7 @@ Reproduce it: `python scripts/demo_stale_input.py`.
 pip install -r requirements.txt
 
 python scripts/download_bank_data.py      # or: dvc pull
-pytest -q                                 # 80 tests
+pytest -q                                 # 82 tests
 python scripts/train_bank.py              # trains and scores against baselines
 python scripts/register_bank_model.py     # asks the gate; currently refused
 python scripts/check_drift.py             # 6 of 7 columns alerting
@@ -159,8 +159,7 @@ per second that nobody waits for. Full working: [`reports/cost-report.md`](repor
 src/bank/          contract, splits, features, evaluate, gate, freshness, monitoring
 src/airquality/    the alternative topic that was evaluated first
 scripts/           download, train, register, score_nightly, check_drift, demos
-tests/bank/        57 tests   tests/airquality/  23 tests
-docs/              DESIGN.md, DESIGN-TH.md, GLOSSARY.md, PROPOSAL.md
+tests/bank/        59 tests   tests/airquality/  23 tests
 reports/           training, drift, gate decision, cost, model card, the demo
 ```
 
@@ -169,9 +168,9 @@ profile, and a quality screen that found five faulty sensors — including one r
 constant 1,680 µg/m³ for eight days while producing fresh timestamps. It is kept because
 the alternative considered is part of the reasoning, and its 23 tests still pass.
 
-Design and methodology, with what breaks without each step:
-[`docs/DESIGN.md`](docs/DESIGN.md) · [ภาษาไทย](docs/DESIGN-TH.md) ·
-[glossary](docs/GLOSSARY.md)
+The reasoning behind each step — what it is, why it is needed, what breaks without it, and
+how the choice was checked — is recorded in the project's commit messages, and the measured
+evidence for every claim above is in `reports/`.
 
 ---
 

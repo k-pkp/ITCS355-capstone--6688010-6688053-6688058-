@@ -21,3 +21,8 @@ mlruns/
 mlartifacts/
 data/bank/call-lists/
 data/bank/demo/
+
+# Working documents kept out of the repository on purpose: design notes, the
+# glossary, the proposal drafts and the demo runbook are ours rather than
+# deliverables, and the fonts are only needed to re-render them locally.
+docs/
