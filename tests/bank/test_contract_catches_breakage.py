@@ -148,3 +148,18 @@ def test_several_breakages_are_all_reported_at_once(clean: pd.DataFrame) -> None
     reported = rules_broken(contract.validate(broken))
     assert {"unexpected_target_value", "unexpected_category",
             "implausible_age"} <= reported
+
+
+def test_an_empty_export_is_caught(clean: pd.DataFrame) -> None:
+    """An export that ran and produced nothing must be refused with a readable reason.
+
+    Before this rule existed the empty frame reached the model, which raised a library
+    error about array shapes: a stack trace that says nothing about the export having
+    failed, arriving at 06:00 for whoever is on call.
+    """
+    assert "empty_input" in rules_broken(contract.validate(clean.head(0)))
+
+
+def test_a_normal_frame_is_not_reported_as_empty(clean: pd.DataFrame) -> None:
+    """The mirror: a frame with rows must never trip the empty check."""
+    assert "empty_input" not in rules_broken(contract.validate(clean))

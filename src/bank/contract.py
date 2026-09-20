@@ -75,6 +75,23 @@ class Violation:
         return f"{self.rule}: {self.detail} ({self.row_count} rows)"
 
 
+def check_frame_is_not_empty(frame: pd.DataFrame) -> list[Violation]:
+    """An export that ran and produced no rows is a failure, not a quiet day.
+
+    Without this the empty frame travels all the way to the model, which raises a library
+    error about array shapes — a message that says nothing about the export having failed,
+    arrives as a stack trace, and has to be read by whoever is on call at 06:00.
+    """
+    if len(frame) > 0:
+        return []
+    return [Violation(
+        "empty_input",
+        "the export contains no rows at all; an export that ran and produced nothing is "
+        "a failure upstream, not a day with no customers",
+        0,
+    )]
+
+
 def check_required_columns(frame: pd.DataFrame) -> list[Violation]:
     """Every column the pipeline reads must be present."""
     missing = [column for column in REQUIRED_COLUMNS if column not in frame.columns]
@@ -202,6 +219,7 @@ def validate(frame: pd.DataFrame) -> list[Violation]:
     afternoon to diagnose, not three builds.
     """
     violations: list[Violation] = []
+    violations += check_frame_is_not_empty(frame)
     violations += check_required_columns(frame)
     violations += check_target_values(frame)
     violations += check_categorical_vocabularies(frame)
