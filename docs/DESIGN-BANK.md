@@ -11,6 +11,28 @@ This is the design for the fallback topic, written to the same depth as
 > nothing found. That difference is not a point in either project's favour by itself, but it
 > is the honest starting position of each.
 
+
+> ### Correction, added after the data was downloaded
+>
+> **This document was written before the dataset was opened, and one of its central claims
+> turned out to be wrong.** It says below that the bank project has no real drift and that
+> everything interesting must be injected by hand. That is true of `bank-full.csv`. It is
+> false of `bank-additional-full.csv`, which the project actually uses.
+>
+> The variant we use carries five macroeconomic columns recorded at call time, and the
+> campaign ran May 2008 to November 2010 in stored order — through the financial crisis.
+> Euribor falls from 4.86 to 0.80; the subscription rate rises from 2.8% to 45.9%; six of
+> seven monitored columns cross the PSI alert threshold. **The drift is real and needs no
+> injection.**
+>
+> The dataset also contains a genuine temporal leakage trap: a random 50/50 split reports
+> 11.4% against 11.1% and hides the shift entirely, while a time-ordered split reports 4.7%
+> against 17.9%.
+>
+> The paragraphs below are left as written, because the comparison is what the decision was
+> made on and rewriting it would hide that the decision was made on partly wrong
+> information. Read them knowing this correction exists.
+
 ---
 
 ## 1. The system in one flow
