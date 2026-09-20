@@ -1,6 +1,6 @@
 # ITCS355 Capstone — Proposal
 
-**Team:** [name 1] · [name 2] · [name 3]  ·  **Submitted:** end of Session 3
+**Team:** Pakkapol Boonluck (6688010) · Kritchanat Kulwanich (6688053) · Patcharapol Luksanakam (6688058)  ·  **Submitted:** end of Session 3
 
 ## Problem, and who would use it
 
@@ -150,8 +150,8 @@ beat them by more than seed noise.
 
 | Area | Owner |
 |---|---|
-| Repository, pipeline and documentation | [name 1] |
-| Review and presentation | [name 2] · [name 3] |
+| Repository, pipeline and documentation | Pakkapol Boonluck (6688010) |
+| Review and presentation | Kritchanat Kulwanich (6688053) · Patcharapol Luksanakam (6688058) |
 
 Work is tracked in the repository's commit history, so who did what is a matter of record
 rather than of memory.
