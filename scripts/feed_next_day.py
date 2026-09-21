@@ -51,6 +51,12 @@ DATASET = PROJECT_ROOT / "data" / "bank" / "bank-additional-full.csv"
 CURSOR_OBJECT = "capstone/state/replay-cursor.json"
 INCOMING_OBJECT = "capstone/incoming/contacts.csv"
 
+# The rows the replay walks through, kept in the bucket rather than in the image. The
+# course's first rule is that data does not go in Git, and the same reasoning applies to a
+# container layer: an image that carries its dataset is rebuilt every time the data changes
+# and cannot be pointed at a different one.
+SOURCE_OBJECT = "capstone/replay/source.csv"
+
 # One night's export. The real campaign called about 500 people a day from an export of
 # roughly 3,000; the replay is compressed so that a demonstration can watch a fortnight of
 # operation rather than a fortnight. The call budget is set as a share of the export by the
@@ -62,7 +68,13 @@ def parse_command_line() -> argparse.Namespace:
     """Command line for the replay feeder."""
     parser = argparse.ArgumentParser(
         description="Publish the next day of the replayed campaign")
-    parser.add_argument("--dataset", type=Path, default=DATASET)
+    parser.add_argument("--dataset", type=Path, default=DATASET,
+                        help="the full campaign, read locally. Used to publish the replay "
+                             "source; the scheduled run reads the source from the bucket.")
+    parser.add_argument("--publish-source", action="store_true",
+                        help="upload the held-out period to the bucket as the replay "
+                             "source, then stop. Run once, from a machine that has the "
+                             "dataset.")
     parser.add_argument("--rows", type=int, default=ROWS_PER_NIGHT)
     parser.add_argument("--dry-run", action="store_true",
                         help="report what would be published without writing anything")
@@ -70,6 +82,40 @@ def parse_command_line() -> argparse.Namespace:
                         help="start the replay again from the beginning of the held-out "
                              "period")
     return parser.parse_args()
+
+
+def publish_replay_source(dataset_path: Path) -> int:
+    """Upload the held-out period to the bucket, once, as the rows the replay walks.
+
+    Only the held-out period. Replaying rows the model was fitted to would produce a system
+    that scores better every night for the worst possible reason, and nothing in the running
+    system could tell the difference.
+    """
+    if not dataset_path.exists():
+        raise SystemExit(f"{dataset_path} not found; run `dvc pull`")
+
+    dataset = pd.read_csv(dataset_path, sep=";")
+    held_out = splits.split_by_time(dataset).test
+
+    local_copy = Path("/tmp/replay-source.csv")
+    held_out.to_csv(local_copy, sep=";", index=False)
+    published_uri = cloud.upload(local_copy, SOURCE_OBJECT)
+
+    print(f"published {len(held_out):,} held-out rows to {published_uri}")
+    return 0
+
+
+def read_replay_source() -> pd.DataFrame:
+    """Fetch the rows the replay walks through from the bucket."""
+    local_copy = Path("/tmp/replay-source.csv")
+    try:
+        cloud.download(SOURCE_OBJECT, local_copy)
+    except FileNotFoundError:
+        raise SystemExit(
+            f"no replay source at gs://{cloud.BUCKET}/{SOURCE_OBJECT}. Publish it once "
+            f"with: python scripts/feed_next_day.py --publish-source"
+        )
+    return pd.read_csv(local_copy, sep=";")
 
 
 def read_cursor() -> int:
@@ -97,11 +143,11 @@ def write_cursor(rows_published: int, exhausted: bool) -> None:
 def main() -> int:
     """Publish the next slice of the replay, or stop when the campaign runs out."""
     options = parse_command_line()
-    if not options.dataset.exists():
-        raise SystemExit(f"{options.dataset} not found; run `dvc pull`")
 
-    dataset = pd.read_csv(options.dataset, sep=";")
-    replay_source = splits.split_by_time(dataset).test
+    if options.publish_source:
+        return publish_replay_source(options.dataset)
+
+    replay_source = read_replay_source()
     print(f"replay source: the held-out period, {len(replay_source):,} rows the model "
           f"never trained on")
 
