@@ -77,6 +77,29 @@ beats live data**, and it is the respect that matters for demonstrating monitori
 The model never sees that column. `features.EXCLUDED_COLUMNS` drops the target before
 anything is scored, which is what makes the measurement a measurement rather than a circle.
 
+## The loop, closed, on a schedule
+
+Two replayed days have been through the full chain in the cloud — feeder, scorer, then the
+measurement — and the realised lift is emitted as a metric like any other:
+
+| Replay day | Export | Called | Subscribed | Realised lift |
+|--:|--:|--:|--:|--:|
+| 1 | 600 | 100 | 10 of 100, against 7.3% | **1.36×** |
+| 2 | 600 | 100 | — | **1.40×** |
+
+**The gate's estimate was 1.34×**, measured within contact months on the held-out period.
+The two days the system has actually run came in at 1.36× and 1.40×.
+
+That agreement is the point. A held-out score is a *prediction about the future*, and almost
+every ML project ships one and never finds out whether it was true. Here the prediction and
+the outcome can be put side by side within a day of each other, and so far the estimate is
+holding.
+
+It will not hold forever, and the project says where it breaks: on the validation period —
+the crisis onset — the same model scores 1.07× and falls below 1.0 in two months of four.
+When the replay walks into a stretch like that, these two series should separate, and the
+drift monitor should say so first.
+
 ## Calling a share, not a number
 
 The replayed night is 600 customers, not the real campaign's ~3,000, so that a fortnight of
