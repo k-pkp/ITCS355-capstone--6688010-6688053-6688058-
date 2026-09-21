@@ -82,12 +82,23 @@ this project, so every number is rebuilt from rates verified against the Billing
 and quantities taken from what the jobs actually did. That is measurement, not accounting,
 and the two can differ.
 
-The quantities are no longer estimates from local runs. The job runs on the schedule, and
-its three recorded runs took 10.65 s, 3.03 s and 12.31 s on spot `e2-standard-4` at 3.860
-THB/hour. Thirty runs a month at the slowest of those is **1.93 THB/month**, which is the
-figure in section 3 — the estimate made before building turned out to be right for the
-reason it was made, not by luck: the cost of this design is dominated by how long a machine
+The quantities are no longer estimates from local runs. The jobs run on the schedule, and
+the recorded scoring runs took 10.65 s, 3.03 s and 12.31 s on spot `e2-standard-4` at 3.860
+THB/hour. Thirty runs a month at the slowest of those is **1.93 THB/month** for the scorer,
+which is the figure in section 3 — the estimate made before building turned out right for
+the reason it was made, not by luck: this design's cost is dominated by how long a machine
 exists, and the machine exists for about ten seconds a day.
+
+**There are now three scheduled jobs, not one.** The replay feeder at 01:50 and the
+realised-lift measurement at 02:10 each cost about the same as the scorer, so the honest
+monthly figure is roughly **5.8 THB**, not 1.93. Each is a separate Vertex job rather than
+three steps in one, and that choice costs about 3.9 THB a month: if the feeder were a step
+inside the scorer, a feeder failure would fail the whole run instead of leaving a stale
+input for the freshness gate to refuse. Four baht a month is what it costs for the gate to
+be a real control rather than a demonstration.
+
+Against the always-on endpoint's ~6,400 THB/month, three jobs and one job round to the same
+number.
 
 The dashboard, the alert policy and the six custom metric series are inside the free
 allowance. The container images are not: the registry holds six versions of this image, and

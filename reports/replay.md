@@ -22,6 +22,7 @@ the project's controls could never actually fire:
 |---|---|---|
 | 01:50 | `itcs355-capstone-feeder` | publishes the next 600 rows of the held-out period as `capstone/incoming/contacts.csv` |
 | 02:00 | `itcs355-capstone-nightly` | reads it, checks its age, contract and model, publishes a call list |
+| 02:10 | `itcs355-capstone-measure` | scores that list against the outcomes the replay already knows, and emits the realised lift |
 
 A cursor in the bucket — `capstone/state/replay-cursor.json` — records how far the replay has
 reached. It lives in object storage rather than in the container, because the container is

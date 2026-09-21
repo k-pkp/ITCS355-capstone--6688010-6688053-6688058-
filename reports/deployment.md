@@ -94,5 +94,6 @@ and publishes to the bucket, which is where the output belongs anyway.
 ## Cost
 
 The schedule runs 30 times a month, about a minute each, on spot `e2-standard-4` at
-3.860 THB/hour — roughly **1.93 THB per month**, matching the estimate in the cost report.
+3.860 THB/hour — roughly **1.93 THB per month** for the scorer, and about **5.8 THB** for
+all three scheduled jobs together.
 The dashboard, the alert and the six custom metric series are inside the free allowance.

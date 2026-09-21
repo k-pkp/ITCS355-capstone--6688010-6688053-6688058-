@@ -238,7 +238,11 @@ the replay stops rather than looping: [`reports/replay.md`](reports/replay.md).
 | Serving pattern | THB / month |
 |---|--:|
 | Always-on managed endpoint | ~6,400 |
-| **Nightly batch on spot (chosen)** | **1.93** |
+| **Three nightly batch jobs on spot (chosen)** | **~5.8** |
+
+Three jobs rather than one step: the feeder, the scorer and the measurement are separate so
+that a feeder failure leaves a stale input for the gate to refuse instead of failing the
+whole run. That separation costs about 3.9 THB a month.
 
 An endpoint bills 8.889 THB/hour whether or not anything calls it, to serve 0.48 predictions
 per second that nobody waits for. Full working: [`reports/cost-report.md`](reports/cost-report.md).
