@@ -251,7 +251,8 @@ per second that nobody waits for. Full working: [`reports/cost-report.md`](repor
 src/bank/          contract, splits, features, evaluate, gate, freshness, monitoring,
                    cloud (object storage and metrics)
 Dockerfile         the image the scheduled job runs, base pinned by digest
-scripts/           download, train, register, score_nightly, check_drift, demos
+scripts/           download, train, register, score_nightly, check_drift,
+                   feed_next_day and measure_yesterday (the replay), demos
 tests/             59 tests
 reports/           training, drift, gate decision, cost, model card, the demo
 ```
