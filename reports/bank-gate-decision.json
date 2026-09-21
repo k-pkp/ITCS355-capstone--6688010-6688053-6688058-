@@ -1,7 +1,10 @@
 {
-  "decided_at_utc": "2026-09-21T01:53:14.694715+00:00",
-  "passed": true,
-  "reasons": [],
+  "decided_at_utc": "2026-09-21T03:15:01.842551+00:00",
+  "passed": false,
+  "reasons": [
+    "lift 1.34 does not clear the best baseline (incumbent, 1.34) by the required 0.05; it needs 1.39",
+    "the working tree has uncommitted changes, so 'git_commit' would name a commit that is not the code this model was trained by. Commit first."
+  ],
   "candidate_lift": 1.3395873557145563,
   "candidate_worst_month_lift": 1.251750700280112,
   "candidate_month_lifts": [
@@ -73,20 +76,23 @@
   ],
   "baseline_lifts": {
     "file_order": 0.8055777958292761,
-    "euribor3m": 0.9646893603903194
+    "euribor3m": 0.9646893603903194,
+    "incumbent": 1.3395873557145563
   },
   "minimum_margin": 0.05,
   "lineage": {
-    "git_commit": "695ef100c50fac4bbad9530368cabb17d0a73737",
+    "git_commit": "506c150d921f86c87431c9e45ea298c1ee5a2886",
+    "git_tree_clean": false,
     "data_sha256": "74adfc578bf77a7ff4bb1ba4a9f8709d9e3c6907342959c2c8416847e0afb4d8",
     "data_version": "f6cb2c1256ffe2836b36df321f46e92c",
+    "model_sha256": "70b8a6117a187371eec6d2e956fc2184281308e72f1ec3fb36d0affc7193d79b",
     "seed": 20260101,
     "feature_names_hash": "589bc39141290576",
     "train_rows": 4000,
     "metric_lift": 1.3396,
     "metric": "within-month lift at the supervisor's call share",
     "worst_month_lift": 1.2518,
-    "trained_at_utc": "2026-09-21T01:53:14.694650+00:00",
+    "trained_at_utc": "2026-09-21T03:15:01.842465+00:00",
     "call_budget": 500
   }
 }

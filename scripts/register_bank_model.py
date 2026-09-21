@@ -268,11 +268,35 @@ def main() -> int:
     decision = gate.evaluate_candidate(candidate, baselines, lineage)
     print(f"\n{decision}\n")
 
+    registered_version = None
+    if decision.passed:
+        candidate_model_path.replace(SERVING_MODEL_PATH)
+        registered_version = register_in_mlflow(model, lineage, options.model_name)
+        promotion.write_approval(APPROVAL_PATH, promotion.Approval(
+            model_sha256=lineage["model_sha256"],
+            registered_version=str(registered_version),
+            metric_lift=lineage["metric_lift"],
+            registered_at_utc=lineage["trained_at_utc"],
+        ))
+    else:
+        # The candidate file is removed rather than left beside the serving model. A
+        # rejected model sitting in the reports directory under a similar name is one
+        # careless copy away from being the thing that ships.
+        candidate_model_path.unlink(missing_ok=True)
+
+    # The decision file is written after the promotion, not before, so the serving record
+    # in it is the state this decision left behind rather than the state it found. This
+    # file holds the *most recent* decision, which is often a refusal, and a refusal read
+    # on its own looks like "nothing is deployed" when it usually means "the model already
+    # serving was not replaced".
+    serving = promotion.read_approval(APPROVAL_PATH)
+
     REPORTS_DIR.mkdir(parents=True, exist_ok=True)
     (REPORTS_DIR / "bank-gate-decision.json").write_text(json.dumps({
         "decided_at_utc": datetime.now(timezone.utc).isoformat(),
         "passed": decision.passed,
         "reasons": decision.reasons,
+        "serving_after_this_decision": serving.as_dict() if serving else None,
         "candidate_lift": candidate.lift,
         "candidate_worst_month_lift": candidate.worst_month_lift,
         # A list rather than a dict keyed by month name. The campaign spans two and a half
@@ -290,27 +314,16 @@ def main() -> int:
     }, indent=2))
 
     if not decision.passed:
-        # The candidate file is removed rather than left beside the serving model. A
-        # rejected model sitting in the reports directory under a similar name is one
-        # careless copy away from being the thing that ships.
-        candidate_model_path.unlink(missing_ok=True)
         print("nothing was registered.")
         print("The gate is doing its job. The decision and its reasons are in "
               "reports/bank-gate-decision.json, which is the record of what was refused "
               "and why -- a registry holding only models that passed cannot answer that.")
+        if serving is not None:
+            print(f"Still serving: version {serving.registered_version}, "
+                  f"lift {serving.metric_lift}.")
         return 1
 
-    candidate_model_path.replace(SERVING_MODEL_PATH)
-    version = register_in_mlflow(model, lineage, options.model_name)
-
-    promotion.write_approval(APPROVAL_PATH, promotion.Approval(
-        model_sha256=lineage["model_sha256"],
-        registered_version=str(version),
-        metric_lift=lineage["metric_lift"],
-        registered_at_utc=lineage["trained_at_utc"],
-    ))
-
-    print(f"registered {options.model_name} version {version}")
+    print(f"registered {options.model_name} version {registered_version}")
     print(f"approved model bytes {lineage['model_sha256'][:16]}… — the nightly job "
           f"refuses to score with anything else")
     return 0

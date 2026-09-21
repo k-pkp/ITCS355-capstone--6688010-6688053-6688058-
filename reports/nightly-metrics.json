@@ -1,16 +1,16 @@
 {
-  "run_at_utc": "2026-09-21T01:38:08.560818+00:00",
-  "input": "gs://itcs355-6688010/capstone/incoming/contacts.csv",
+  "run_at_utc": "2026-09-21T03:16:20.057777+00:00",
+  "input": "/tmp/fresh-export.csv",
   "published": true,
   "refusal_reason": null,
-  "input_age_hours": -0.0,
-  "input_modified_at_utc": "2026-09-21T01:38:08.889000+00:00",
-  "rows_in": 3000,
-  "published_uri": "gs://itcs355-6688010/capstone/call-lists/call-list-2026-09-21.csv",
+  "input_age_hours": 0.0,
+  "input_modified_at_utc": "2026-09-21T03:16:12.913577+00:00",
+  "rows_in": 41188,
+  "model_sha256": "70b8a6117a187371eec6d2e956fc2184281308e72f1ec3fb36d0affc7193d79b",
   "rows_published": 500,
-  "score_median": 0.2191,
-  "score_min": 0.147,
-  "score_max": 0.4474,
-  "duration_seconds": 3.03,
-  "output": "/home/kengp/MU/MLOD/itcs355-capstone/data/bank/call-lists/call-list-2026-09-21.csv"
+  "score_median": 0.7831,
+  "score_min": 0.729,
+  "score_max": 0.9425,
+  "duration_seconds": 0.88,
+  "output": "/tmp/call-lists/call-list-2026-09-21.csv"
 }
