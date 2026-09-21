@@ -28,6 +28,14 @@ particular order, which is a state a deployed ranker should never reach.
 mean is what the model is worth over a year; the worst month is what it is worth on a bad
 one.
 
+*Beat the model already serving, not only the baselines.* The incumbent is re-scored on the
+same test period and handed to the gate as another baseline. Without it, a model worse than
+the one it replaces passes as long as it clears a fixed baseline, and each release can be a
+small step backwards while every release looks like a pass.
+
+*Carry the hash of the approved bytes, and have the serving job check it.* See
+`src/bank/promotion.py`. The gate approving a model means nothing if a different file ships.
+
 The gate returns a decision rather than raising, so the caller chooses what to do with a
 refusal. CI fails the build; a human running it locally gets an explanation.
 """
@@ -49,10 +57,16 @@ MINIMUM_ABSOLUTE_LIFT = 1.0
 MINIMUM_WORST_MONTH_LIFT = 1.0
 
 # The fields a registered model must carry to answer "where did this come from".
+#
+# `model_sha256` answers a different question from the rest: not where the model came from,
+# but *which bytes* were approved. Without it the registry approves an abstraction and the
+# image ships a file, and nothing compares the two.
 REQUIRED_LINEAGE_FIELDS = (
     "git_commit",
+    "git_tree_clean",
     "data_sha256",
     "data_version",
+    "model_sha256",
     "seed",
     "feature_names_hash",
     "train_rows",
@@ -139,9 +153,29 @@ def check_lineage_is_complete(lineage: dict) -> list[str]:
     reasons = []
     for field_name in REQUIRED_LINEAGE_FIELDS:
         value = lineage.get(field_name)
+        # `False` is a real answer for git_tree_clean and must not be read as absence.
+        # `check_code_is_committed` is what refuses it, with a reason that says why.
+        if isinstance(value, bool):
+            continue
         if value is None or value == "" or value == "unknown":
             reasons.append(f"lineage field {field_name!r} is missing or unknown")
     return reasons
+
+
+def check_code_is_committed(lineage: dict) -> list[str]:
+    """Return a refusal reason if the working tree had uncommitted changes.
+
+    `git rev-parse HEAD` succeeds on a dirty tree, so a lineage record can name a commit
+    whose code is not the code that trained the model. The field is then populated,
+    plausible, and wrong — which is the same failure as Lab 2's `git_commit: "unknown"`,
+    only harder to spot, because this one looks like a real answer.
+    """
+    if lineage.get("git_tree_clean") is False:
+        return [
+            "the working tree has uncommitted changes, so 'git_commit' would name a "
+            "commit that is not the code this model was trained by. Commit first."
+        ]
+    return []
 
 
 def evaluate_candidate(candidate: RankingScore,
@@ -157,5 +191,6 @@ def evaluate_candidate(candidate: RankingScore,
     reasons += check_beats_baselines(candidate, baselines)
     reasons += check_no_month_is_worse_than_random(candidate)
     reasons += check_lineage_is_complete(lineage)
+    reasons += check_code_is_committed(lineage)
 
     return GateDecision(passed=not reasons, reasons=reasons)

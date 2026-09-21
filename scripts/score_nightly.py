@@ -4,7 +4,7 @@
 
 This is what Cloud Scheduler runs. Six steps, about a minute:
 
-    read input -> FRESHNESS GATE -> data contract -> features -> score -> publish
+    read input -> FRESHNESS GATE -> data contract -> APPROVED MODEL -> score -> publish
 
 The gate is second on purpose. Checking freshness before the contract means a stale file is
 refused for being stale rather than passing every structural check and then being scored,
@@ -27,13 +27,14 @@ import pandas as pd
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
-from src.bank import cloud, contract, features, freshness
+from src.bank import cloud, contract, features, freshness, promotion
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 REPORTS_DIR = PROJECT_ROOT / "reports"
 OUTPUT_DIR = PROJECT_ROOT / "data" / "bank" / "call-lists"
 METRICS_PATH = REPORTS_DIR / "nightly-metrics.json"
 DEFAULT_MODEL = REPORTS_DIR / "bank-model.joblib"
+APPROVAL_PATH = REPORTS_DIR / "approved-model.json"
 
 
 def parse_command_line() -> argparse.Namespace:
@@ -166,6 +167,23 @@ def main() -> int:
         write_metrics(metrics)
         print(f"\nno model at {options.model}; published nothing")
         return 4
+
+    # The model is checked against the approval record before it is loaded. Without this
+    # the job scores whatever file is at that path, and "which model is in production" is
+    # answered by a build log rather than by the running system.
+    try:
+        verified_hash = promotion.require_approved_model(options.model, APPROVAL_PATH)
+    except promotion.UnapprovedModelError as refusal:
+        metrics["refusal_reason"] = "unapproved_model"
+        metrics["detail"] = str(refusal)
+        write_metrics(metrics)
+        if options.emit_metrics:
+            cloud.emit_metrics({"published": 0, "refused": 1})
+        print(f"\nUNAPPROVED MODEL — published nothing:\n  {refusal}")
+        return 5
+
+    print(f"model {verified_hash[:16]}… matches the approved one", flush=True)
+    metrics["model_sha256"] = verified_hash
 
     model = joblib.load(options.model)
     scored = frame.copy()

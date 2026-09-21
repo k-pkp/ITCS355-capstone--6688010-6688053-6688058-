@@ -53,9 +53,9 @@ The one-page proposal, as submitted at M2, is [`PROPOSAL.md`](PROPOSAL.md).
 pip install -r requirements.txt
 
 python scripts/download_bank_data.py      # or: dvc pull
-pytest -q                                 # 59 tests
+pytest -q                                 # 67 tests
 python scripts/train_bank.py              # trains and scores against baselines
-python scripts/register_bank_model.py     # asks the gate; currently refused
+python scripts/register_bank_model.py     # asks the gate; currently passes
 python scripts/check_drift.py             # 6 of 7 columns alerting
 python scripts/demo_stale_input.py        # the failure, with and without the gate
 ```

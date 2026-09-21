@@ -21,6 +21,10 @@ COPY --chown=runner:runner src/ ./src/
 COPY --chown=runner:runner scripts/ ./scripts/
 COPY --chown=runner:runner reports/bank-model.joblib ./reports/bank-model.joblib
 
+# The record of which model bytes the gate approved. The job hashes the model above
+# and refuses to score if it does not match this file.
+COPY --chown=runner:runner reports/approved-model.json ./reports/approved-model.json
+
 USER runner
 
 # Credentials never enter an image layer. They arrive at runtime from the identity the job

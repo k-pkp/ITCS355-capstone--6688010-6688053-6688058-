@@ -29,12 +29,15 @@ import pandas as pd
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 from scripts.train_bank import SEED, TRAINING_WINDOW_ROWS, recent_window, train_model
-from src.bank import contract, evaluate, features, gate, splits
+from src.bank import contract, evaluate, features, gate, promotion, splits
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 DATASET = PROJECT_ROOT / "data" / "bank" / "bank-additional-full.csv"
 DATASET_POINTER = PROJECT_ROOT / "data" / "bank" / "bank-additional-full.csv.dvc"
 REPORTS_DIR = PROJECT_ROOT / "reports"
+
+SERVING_MODEL_PATH = REPORTS_DIR / "bank-model.joblib"
+APPROVAL_PATH = REPORTS_DIR / "approved-model.json"
 
 MODEL_NAME = "bank-call-list-ranker"
 MLFLOW_TRACKING_URI = f"sqlite:///{PROJECT_ROOT / 'mlflow.db'}"
@@ -52,6 +55,19 @@ def parse_command_line() -> argparse.Namespace:
     return parser.parse_args()
 
 
+def run_git(arguments: list[str]) -> tuple[int, str]:
+    """Run one git command in the project, returning its exit code and stripped output."""
+    try:
+        result = subprocess.run(
+            ["git"] + arguments,
+            cwd=PROJECT_ROOT, capture_output=True, text=True, timeout=10,
+        )
+    except (OSError, subprocess.SubprocessError):
+        return 1, ""
+
+    return result.returncode, result.stdout.strip()
+
+
 def current_git_commit() -> str:
     """Return the full commit hash, or an empty string if it cannot be determined.
 
@@ -59,15 +75,22 @@ def current_git_commit() -> str:
     both as missing, and returning a plausible-looking placeholder is how a lineage field
     ends up populated with nothing.
     """
-    try:
-        result = subprocess.run(
-            ["git", "rev-parse", "HEAD"],
-            cwd=PROJECT_ROOT, capture_output=True, text=True, timeout=10,
-        )
-    except (OSError, subprocess.SubprocessError):
-        return ""
+    exit_code, output = run_git(["rev-parse", "HEAD"])
+    return output if exit_code == 0 else ""
 
-    return result.stdout.strip() if result.returncode == 0 else ""
+
+def working_tree_is_clean() -> bool:
+    """Return whether every tracked change has been committed.
+
+    `git rev-parse HEAD` answers just as confidently on a dirty tree, so without this the
+    recorded commit can name code that is not the code that trained the model. The two
+    reports this script is about to write are produced after the check, so they cannot
+    make it fail.
+    """
+    exit_code, output = run_git(["status", "--porcelain", "--untracked-files=no"])
+    if exit_code != 0:
+        return False
+    return output == ""
 
 
 def dataset_fingerprint(path: Path) -> str:
@@ -104,6 +127,30 @@ def feature_names_fingerprint() -> str:
     """
     joined = "\n".join(features.feature_names())
     return hashlib.sha256(joined.encode()).hexdigest()[:16]
+
+
+def score_incumbent(test_features, test_target, test_frame):
+    """Re-score the model currently serving, or return None if there is not one.
+
+    The incumbent is loaded from the approved serving file rather than from the registry,
+    because the serving file is what the call centre's lists actually came from. If the two
+    ever disagree, the one that shipped is the one a replacement has to beat.
+    """
+    approval = promotion.read_approval(APPROVAL_PATH)
+    if approval is None or not SERVING_MODEL_PATH.exists():
+        return None
+
+    serving_hash = promotion.hash_file(SERVING_MODEL_PATH)
+    if serving_hash != approval.model_sha256:
+        raise SystemExit(
+            f"the serving model at {SERVING_MODEL_PATH} is not the approved one "
+            f"({serving_hash[:16]}… against {approval.model_sha256[:16]}…). Refusing to "
+            f"treat an unknown file as the incumbent."
+        )
+
+    incumbent_model = joblib.load(SERVING_MODEL_PATH)
+    scores = incumbent_model.predict_proba(test_features)[:, 1]
+    return evaluate.score_within_contact_months(scores, test_target, test_frame)
 
 
 def register_in_mlflow(model, lineage: dict, model_name: str) -> str:
@@ -180,10 +227,30 @@ def main() -> int:
             evaluate.baseline_single_column(split.test), test_target, split.test),
     }
 
+    # The model already serving is re-scored on the same test period and handed to the gate
+    # as one more baseline. Comparing against its *recorded* lift instead would compare two
+    # numbers produced at different times from different data, which is how a release can be
+    # a step backwards while the arithmetic says it improved.
+    incumbent = score_incumbent(test_features, test_target, split.test)
+    if incumbent is not None:
+        baselines["incumbent"] = incumbent
+    else:
+        print("no incumbent: nothing has been approved before, so this is the first "
+              "registration and there is no serving model to beat", flush=True)
+
+    # The bytes that would ship are written and hashed *before* the gate decides, so the
+    # hash in the lineage describes the file the serving job will check rather than one
+    # produced afterwards from a second call to joblib.dump.
+    candidate_model_path = REPORTS_DIR / "bank-model.candidate.joblib"
+    REPORTS_DIR.mkdir(parents=True, exist_ok=True)
+    joblib.dump(model, candidate_model_path)
+
     lineage = {
         "git_commit": current_git_commit(),
+        "git_tree_clean": working_tree_is_clean(),
         "data_sha256": dataset_fingerprint(options.dataset),
         "data_version": dvc_data_version(DATASET_POINTER),
+        "model_sha256": promotion.hash_file(candidate_model_path),
         "seed": SEED,
         "feature_names_hash": feature_names_fingerprint(),
         "train_rows": len(training_frame),
@@ -223,15 +290,29 @@ def main() -> int:
     }, indent=2))
 
     if not decision.passed:
+        # The candidate file is removed rather than left beside the serving model. A
+        # rejected model sitting in the reports directory under a similar name is one
+        # careless copy away from being the thing that ships.
+        candidate_model_path.unlink(missing_ok=True)
         print("nothing was registered.")
         print("The gate is doing its job. The decision and its reasons are in "
               "reports/bank-gate-decision.json, which is the record of what was refused "
               "and why -- a registry holding only models that passed cannot answer that.")
         return 1
 
-    joblib.dump(model, REPORTS_DIR / "bank-model.joblib")
+    candidate_model_path.replace(SERVING_MODEL_PATH)
     version = register_in_mlflow(model, lineage, options.model_name)
+
+    promotion.write_approval(APPROVAL_PATH, promotion.Approval(
+        model_sha256=lineage["model_sha256"],
+        registered_version=str(version),
+        metric_lift=lineage["metric_lift"],
+        registered_at_utc=lineage["trained_at_utc"],
+    ))
+
     print(f"registered {options.model_name} version {version}")
+    print(f"approved model bytes {lineage['model_sha256'][:16]}… — the nightly job "
+          f"refuses to score with anything else")
     return 0
 
 

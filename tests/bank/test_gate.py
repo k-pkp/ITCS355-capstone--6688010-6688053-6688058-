@@ -29,8 +29,10 @@ def complete_lineage() -> dict:
     """A lineage dictionary with every required field populated."""
     return {
         "git_commit": "0123456789abcdef0123456789abcdef01234567",
+        "git_tree_clean": True,
         "data_sha256": "74adfc578bf77a7ff4bb1ba4a9f8709d9e3c6907342959c2c8416847e0afb4d8",
         "data_version": "f6cb2c1256ffe2836b36df321f46e92c",
+        "model_sha256": "b" * 64,
         "seed": 20260101,
         "feature_names_hash": "abc123def4567890",
         "train_rows": 24712,
@@ -185,3 +187,46 @@ def test_a_whole_period_score_is_not_treated_as_having_passed_the_month_check():
     reasons = gate.check_no_month_is_worse_than_random(candidate)
 
     assert reasons == []
+
+
+def test_a_dirty_working_tree_is_refused():
+    """A commit hash recorded from an uncommitted tree names code that did not train this.
+
+    The field is populated and plausible, which is worse than empty: nothing looks wrong.
+    """
+    lineage = complete_lineage()
+    lineage["git_tree_clean"] = False
+
+    decision = gate.evaluate_candidate(
+        make_within_month_score([1.4, 1.3]),
+        {"euribor3m": make_within_month_score([1.0, 1.0])},
+        lineage,
+    )
+
+    assert not decision.passed
+    assert any("uncommitted changes" in reason for reason in decision.reasons)
+
+
+def test_a_clean_tree_is_not_read_as_a_missing_field():
+    """`git_tree_clean` is a boolean, and False must not be mistaken for absence."""
+    lineage = complete_lineage()
+    lineage["git_tree_clean"] = True
+
+    assert gate.check_lineage_is_complete(lineage) == []
+
+
+def test_a_model_worse_than_the_incumbent_is_refused():
+    """Beating the fixed baselines is not enough when a better model is already serving.
+
+    Without this, every release can be a small step backwards while each one passes.
+    """
+    baselines = {
+        "euribor3m": make_within_month_score([0.96, 0.96]),
+        "incumbent": make_within_month_score([1.40, 1.40]),
+    }
+
+    decision = gate.evaluate_candidate(
+        make_within_month_score([1.20, 1.20]), baselines, complete_lineage())
+
+    assert not decision.passed
+    assert any("incumbent" in reason for reason in decision.reasons)
