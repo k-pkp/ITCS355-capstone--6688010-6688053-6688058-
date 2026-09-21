@@ -145,6 +145,26 @@ cost 0.0167. PSI opens an investigation; it does not rank incidents.
 
 ---
 
+## Deployment
+
+The nightly job runs on Google Cloud, on a schedule, and reports to a dashboard with an
+alert that has already fired on a real refusal.
+
+| | |
+|---|---|
+| Schedule | Cloud Scheduler `itcs355-capstone-nightly`, `0 2 * * *` Asia/Bangkok |
+| Compute | Vertex AI custom job, `e2-standard-4`, spot |
+| Image | `itcs355-capstone@sha256:472a2777…a768b2`, base pinned by digest, non-root |
+| Identity | `itcs355-train` — read and write storage, submit jobs, nothing else |
+| Output | `gs://itcs355-6688010/capstone/call-lists/call-list-YYYY-MM-DD.csv` |
+| Alert | fires when `published < 1`, i.e. when a run **refused** rather than when it crashed |
+
+The alert was proved rather than configured: an export carrying an unknown job category was
+uploaded, the contract refused it, and the `published` series went 1 to 0. Working:
+[`reports/deployment.md`](reports/deployment.md).
+
+---
+
 ## Cost
 
 | Serving pattern | THB / month |
@@ -160,7 +180,9 @@ per second that nobody waits for. Full working: [`reports/cost-report.md`](repor
 ## Layout
 
 ```
-src/bank/          contract, splits, features, evaluate, gate, freshness, monitoring
+src/bank/          contract, splits, features, evaluate, gate, freshness, monitoring,
+                   cloud (object storage and metrics)
+Dockerfile         the image the scheduled job runs, base pinned by digest
 scripts/           download, train, register, score_nightly, check_drift, demos
 tests/             59 tests
 reports/           training, drift, gate decision, cost, model card, the demo
@@ -202,7 +224,9 @@ silent:
   and the drift detected is a real shift that happened in 2008–2010 being **replayed**, not
   one observed as it happens. The shift is real data rather than injected noise, which is
   why this dataset was chosen; it is not live.
-- **Not deployed.** Every cost figure is projected from Lab 5's verified rates, not billed.
+- **No billing export**, so the cost figures are rebuilt from Lab 5's measured rates
+  and this project's own job durations rather than read off an invoice. The deployment
+  itself is real; the accounting of it is measurement.
 - **No registered model**, because the gate refuses the current one. Correct, and the honest
   next step is training on a recent window rather than tuning harder.
 - **No group-fairness measurement.** Noted in the [model card](reports/model-card.md)

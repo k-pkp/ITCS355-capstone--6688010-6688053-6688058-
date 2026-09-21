@@ -1,0 +1,1 @@
+asia-southeast1-docker.pkg.dev/itcs355-6688010/itcs355/itcs355-capstone@sha256:472a27776963c44dac2de1a084cf27c49b0e0d7b7638f6360949dd3924a768b2

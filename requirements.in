@@ -1,6 +1,14 @@
 # Pinned exactly, because "it worked on my laptop" is the failure this course opens with.
-pandas==2.4.1
+# Every version here is one that is actually installed and tested against, not one chosen
+# from memory -- an earlier draft of this file pinned pandas==2.4.1 and scikit-learn==1.8.2,
+# neither of which was ever released, and the lock step failed silently in a redirect.
+pandas==3.0.2
 numpy==2.4.4
+scikit-learn==1.8.0
+joblib==1.4.2
 requests==2.33.0
-scikit-learn==1.8.2
 pytest==9.1.1
+
+# The nightly job reads its input from object storage and reports to Cloud Monitoring.
+google-cloud-storage==3.13.1
+google-cloud-monitoring==2.31.0

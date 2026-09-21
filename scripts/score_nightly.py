@@ -27,7 +27,7 @@ import pandas as pd
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
-from src.bank import contract, features, freshness
+from src.bank import cloud, contract, features, freshness
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 REPORTS_DIR = PROJECT_ROOT / "reports"
@@ -39,8 +39,17 @@ DEFAULT_MODEL = REPORTS_DIR / "bank-model.joblib"
 def parse_command_line() -> argparse.Namespace:
     """Command line for the nightly scoring job."""
     parser = argparse.ArgumentParser(description="Score and rank tomorrow's contact list")
-    parser.add_argument("--input", type=Path, required=True,
-                        help="the customer export to score")
+    parser.add_argument("--input", type=Path, default=None,
+                        help="a local customer export to score")
+    parser.add_argument("--input-object", default=None,
+                        help="an object in the project bucket to score instead of a local "
+                             "file, e.g. capstone/incoming/contacts.csv. This is what the "
+                             "scheduled run uses.")
+    parser.add_argument("--publish-prefix", default=None,
+                        help="bucket prefix to publish the call list under; implies the "
+                             "run is a cloud run")
+    parser.add_argument("--emit-metrics", action="store_true",
+                        help="send this run's numbers to Cloud Monitoring")
     parser.add_argument("--model", type=Path, default=DEFAULT_MODEL)
     parser.add_argument("--out-dir", type=Path, default=OUTPUT_DIR)
     parser.add_argument("--call-budget", type=int, default=500,
@@ -73,6 +82,31 @@ def main() -> int:
         "refusal_reason": None,
     }
 
+    if options.input is None and options.input_object is None:
+        raise SystemExit("pass --input for a local file or --input-object for the bucket")
+
+    # A bucket object is fetched first, and its age is taken from the object's own
+    # metadata rather than from the downloaded copy, whose modification time would be
+    # the moment we downloaded it -- which is always now, and always fresh.
+    remote_age_hours = None
+    if options.input_object is not None:
+        local_copy = Path("/tmp/nightly-input.csv")
+        try:
+            described = cloud.download(options.input_object, local_copy)
+        except FileNotFoundError:
+            metrics["refusal_reason"] = "input_missing"
+            write_metrics(metrics)
+            if options.emit_metrics:
+                cloud.emit_metrics({"published": 0, "refused": 1})
+            print(f"gs://{cloud.BUCKET}/{options.input_object} does not exist; "
+                  f"published nothing")
+            return 1
+
+        options.input = local_copy
+        remote_age_hours = (now - described.updated_at).total_seconds() / 3600
+        metrics["input"] = described.uri
+        print(f"fetched {described.uri} ({described.size_bytes:,} bytes)", flush=True)
+
     if not options.input.exists():
         metrics["refusal_reason"] = "input_missing"
         write_metrics(metrics)
@@ -80,7 +114,16 @@ def main() -> int:
         return 1
 
     # --- the freshness gate ------------------------------------------------------------
-    decision = freshness.check(options.input, now=now)
+    if remote_age_hours is not None:
+        from datetime import timedelta
+        decision = freshness.FreshnessDecision(
+            fresh=remote_age_hours <= freshness.MAXIMUM_INPUT_AGE.total_seconds() / 3600,
+            age=timedelta(hours=remote_age_hours),
+            source_modified_at=now - timedelta(hours=remote_age_hours),
+            checked_at=now,
+        )
+    else:
+        decision = freshness.check(options.input, now=now)
     metrics["input_age_hours"] = round(decision.age_hours, 2)
     metrics["input_modified_at_utc"] = decision.source_modified_at.isoformat()
     print(decision, flush=True)
@@ -88,6 +131,9 @@ def main() -> int:
     if not decision.fresh and not options.skip_freshness_gate:
         metrics["refusal_reason"] = "stale_input"
         write_metrics(metrics)
+        if options.emit_metrics:
+            cloud.emit_metrics({"published": 0, "refused": 1,
+                                "input_age_hours": metrics["input_age_hours"]})
         print("\nSTALE INPUT — published nothing.")
         print("A missing call list is noticed in minutes. A plausible wrong one is "
               "worked through for a day.")
@@ -106,6 +152,9 @@ def main() -> int:
         metrics["refusal_reason"] = "contract_violation"
         metrics["violations"] = [str(violation) for violation in violations]
         write_metrics(metrics)
+        if options.emit_metrics:
+            cloud.emit_metrics({"published": 0, "refused": 1,
+                                "contract_violations": len(violations)})
         print("\nCONTRACT VIOLATION — published nothing:")
         for violation in violations:
             print(f"  {violation}")
@@ -127,6 +176,12 @@ def main() -> int:
     output_path = options.out_dir / f"call-list-{now:%Y-%m-%d}.csv"
     call_list.to_csv(output_path, index=False)
 
+    if options.publish_prefix is not None:
+        published_uri = cloud.upload(
+            output_path, f"{options.publish_prefix}/call-list-{now:%Y-%m-%d}.csv")
+        metrics["published_uri"] = published_uri
+        print(f"published to {published_uri}", flush=True)
+
     metrics.update({
         "published": True,
         "rows_published": len(call_list),
@@ -138,6 +193,17 @@ def main() -> int:
         "output": str(output_path),
     })
     write_metrics(metrics)
+
+    if options.emit_metrics:
+        written = cloud.emit_metrics({
+            "published": 1,
+            "refused": 0,
+            "rows_in": metrics["rows_in"],
+            "rows_published": metrics["rows_published"],
+            "input_age_hours": metrics.get("input_age_hours", 0),
+            "duration_seconds": metrics["duration_seconds"],
+        })
+        print(f"emitted {len(written)} metrics to Cloud Monitoring")
 
     print(f"\npublished {len(call_list)} customers to {output_path}")
     print(f"score range {metrics['score_min']} to {metrics['score_max']}, "
