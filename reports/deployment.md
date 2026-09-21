@@ -14,7 +14,7 @@ that has fired on a real refusal.
 | Input | `gs://itcs355-6688010/capstone/incoming/contacts.csv`, rewritten nightly by the feeder from `capstone/replay/source.csv` |
 | Output | `gs://itcs355-6688010/capstone/call-lists/call-list-YYYY-MM-DD.csv` |
 | Metrics | six series under `custom.googleapis.com/itcs355/capstone/` |
-| Dashboard | *ITCS355 capstone — nightly call list*, four panels |
+| Dashboard | *ITCS355 capstone — nightly call list*, six panels. Four describe the run; two describe the **result** — the realised lift of the published list and the subscriptions it gained over calling the same people at random. A dashboard of inputs can say the job ran; only those two can say it helped. |
 | Alert | *nightly run refused to publish*, on `published < 1` |
 
 ## The freshness gate reads the object's own timestamp
