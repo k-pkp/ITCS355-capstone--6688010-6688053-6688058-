@@ -238,7 +238,10 @@ the replay stops rather than looping: [`reports/replay.md`](reports/replay.md).
 | Serving pattern | THB / month |
 |---|--:|
 | Always-on managed endpoint | ~6,400 |
-| **Three nightly batch jobs on spot (chosen)** | **~5.8** |
+| **Three nightly batch jobs on spot (chosen)** | **~7.70** |
+
+5.79 of that is compute — three jobs at 1.93 — and the rest is storage and the container
+registry. Both figures in the table are totals, so they compare.
 
 Three jobs rather than one step: the feeder, the scorer and the measurement are separate so
 that a feeder failure leaves a stale input for the gate to refuse instead of failing the

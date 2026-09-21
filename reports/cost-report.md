@@ -5,19 +5,35 @@ reused unchanged. Converted at 1 USD = 32.921586 THB.
 
 ## 1. Estimate, made before building
 
-**4.60 THB per month.** The forecast is below, and section 3 compares it with what the
-design actually implies.
+**4.60 THB per month**, forecast before anything was built. What runs costs about **7.70**,
+and the gap is not a mispriced machine: the design grew from one scheduled job to three, for
+reasons given in section 2. The per-job estimate was right; the job count was wrong.
 
 ## 2. What the system costs to run
 
+Three scheduled jobs, not one. The estimate assumed a single nightly run and a weekly
+retrain; what was built feeds the day's export, scores it, and measures yesterday's list
+against the outcomes, while retraining is run on demand behind the release gate.
+
 | Line | Basis | THB / month |
 |---|---|--:|
-| Nightly scoring batch | 30 runs × ~60 s on spot `e2-standard-4` at 3.860 THB/h | 1.93 |
-| Weekly retraining | 4 runs × ~3 min on spot | 0.77 |
-| Object storage | dataset, DVC remote, published call lists | ~0.20 |
-| Container registry | one image, retention policy on untagged versions | ~1.70 |
-| Monitoring, alerting, scheduler | 6 custom metrics, one policy, one schedule | 0.00 |
-| **Total** | | **~4.60** |
+| Replay feeder, 01:50 | 30 runs × ~60 s on spot `e2-standard-4` at 3.860 THB/h | 1.93 |
+| Scoring batch, 02:00 | 30 runs × ~60 s, same machine | 1.93 |
+| Realised-lift measurement, 02:10 | 30 runs × ~60 s, same machine | 1.93 |
+| Object storage | dataset, DVC remote, replay source, published call lists | ~0.20 |
+| Container registry | retention policy on untagged versions | ~1.70 |
+| Monitoring, alerting, scheduler | 8 custom metrics, one policy, three schedules | 0.00 |
+| **Total** | | **~7.70** |
+
+Retraining is deliberately not on this table as a recurring line. It runs when someone asks
+for it and must pass the gate, because a retrain on a timer that cannot be refused is a risk
+on a timer.
+
+**The 3.9 THB the separation costs.** The feeder and the measurement could each have been a
+step inside the scoring job, for a third of the price. Keeping them apart is what makes the
+freshness gate a real control: if the feeder fails, nothing rewrites the export, it ages
+past 24 hours, and the scorer refuses. As one job, a feeder failure would simply fail the
+run — the easy failure, not the one this project is about.
 
 ## 3. The decision that dominates the bill
 
@@ -26,15 +42,17 @@ comparison rather than as a total:
 
 | Serving pattern | THB / month | Ratio |
 |---|--:|--:|
-| Always-on managed endpoint, `n1-standard-4` | ~6,400 | 1,400× |
-| **Nightly batch on spot (chosen)** | **1.93** | 1× |
+| Always-on managed endpoint, `n1-standard-4` | ~6,400 | 830× |
+| **Three scheduled batch jobs on spot (chosen)** | **~7.70** | 1× |
 
 An endpoint bills **8.889 THB per hour whether or not anything calls it**. This workload is
 41,188 predictions once a day — 0.48 per second averaged out — and nobody waits on any of
 them: agents read the list at 08:00 whether it was computed at 02:00 or at 07:59.
 
-Buying an endpoint here would cost roughly 1,400 times more to deliver a result nobody
-reads any sooner.
+Buying an endpoint here would cost roughly 830 times more to deliver a result nobody reads
+any sooner. The ratio fell from 1,400× only because we added two more jobs; the argument is
+unchanged, and a comparison that survives tripling one side of it is a comparison worth
+making.
 
 ## 4. Cost per 1,000 predictions
 
