@@ -77,7 +77,19 @@ would be worth nothing.
 
 ## 7. Honest limits
 
-No figure here has been reconciled against an invoice. This project has not yet been
-deployed to the cloud, so every number is a projection from measured Lab 5 rates rather
-than a billed amount. The rates are real and were verified against the Billing Catalog; the
-quantities are estimates from local runs.
+No figure here has been reconciled against an invoice. Billing export is not configured on
+this project, so every number is rebuilt from rates verified against the Billing Catalog
+and quantities taken from what the jobs actually did. That is measurement, not accounting,
+and the two can differ.
+
+The quantities are no longer estimates from local runs. The job runs on the schedule, and
+its three recorded runs took 10.65 s, 3.03 s and 12.31 s on spot `e2-standard-4` at 3.860
+THB/hour. Thirty runs a month at the slowest of those is **1.93 THB/month**, which is the
+figure in section 3 — the estimate made before building turned out to be right for the
+reason it was made, not by luck: the cost of this design is dominated by how long a machine
+exists, and the machine exists for about ten seconds a day.
+
+The dashboard, the alert policy and the six custom metric series are inside the free
+allowance. The container images are not: the registry holds six versions of this image, and
+Lab 5 measured registry storage at 38% of that project's bill because nothing ever deletes
+an old image.
