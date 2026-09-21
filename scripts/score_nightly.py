@@ -55,6 +55,13 @@ def parse_command_line() -> argparse.Namespace:
     parser.add_argument("--out-dir", type=Path, default=OUTPUT_DIR)
     parser.add_argument("--call-budget", type=int, default=500,
                         help="how many customers the agents expect to reach")
+    parser.add_argument("--call-share", type=float, default=None,
+                        help="call this share of the export instead of a fixed number. "
+                             "The evaluation measures lift at a share of the export "
+                             "(500 calls out of about 3,000), so a replayed day of 600 "
+                             "customers should have 100 of them called, not 500. Passing "
+                             "a fixed budget larger than the export means calling "
+                             "everybody, which has a lift of exactly 1.0 by definition.")
     parser.add_argument("--now", default=None,
                         help="override the current time, ISO 8601, for replaying a run")
     parser.add_argument("--skip-freshness-gate", action="store_true",
@@ -188,7 +195,16 @@ def main() -> int:
     model = joblib.load(options.model)
     scored = frame.copy()
     scored["score"] = model.predict_proba(features.build_features(frame))[:, 1]
-    call_list = scored.sort_values("score", ascending=False).head(options.call_budget)
+
+    if options.call_share is not None:
+        call_budget = max(1, int(len(frame) * options.call_share))
+        print(f"calling {options.call_share:.1%} of {len(frame):,} customers "
+              f"= {call_budget}", flush=True)
+    else:
+        call_budget = options.call_budget
+
+    metrics["call_budget"] = call_budget
+    call_list = scored.sort_values("score", ascending=False).head(call_budget)
 
     options.out_dir.mkdir(parents=True, exist_ok=True)
     output_path = options.out_dir / f"call-list-{now:%Y-%m-%d}.csv"

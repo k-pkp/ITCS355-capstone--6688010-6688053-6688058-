@@ -207,6 +207,32 @@ uploaded, the contract refused it, and the `published` series went 1 to 0. Worki
 
 ---
 
+## "The data is not live. How does it run day by day?"
+
+The campaign is **replayed**. A separate scheduled job publishes the next slice of the
+held-out period every night at 01:50, and the scoring job treats it as today's export at
+02:00. The rows are real; only the calendar is synthetic.
+
+Two jobs rather than one, on purpose: **if the feeder fails, nothing rewrites the export, it
+ages past 24 hours, and the scorer refuses.** The failure the project is built around then
+happens for real instead of being simulated by editing a timestamp.
+
+And the replay can do one thing a live system cannot. The campaign finished in 2010, so the
+outcomes are already known, and last night's published list can be scored **the next
+morning**:
+
+```
+export:  600 customers, 44 subscribed (7.3%)
+called:  100 customers, 10 subscribed (10.0%)
+realised lift: 1.36x  (+2.7 subscriptions against calling the same 100 at random)
+```
+
+A live campaign waits weeks for those labels — Lab 3 hit exactly that wall, which is why its
+canary had to use a label-free proxy too weak to see anything. Full design, including why
+the replay stops rather than looping: [`reports/replay.md`](reports/replay.md).
+
+---
+
 ## Cost
 
 | Serving pattern | THB / month |
