@@ -195,6 +195,13 @@ silent:
 
 ## What is not done
 
+- **The data is a fixed historical snapshot, and the system is not live.** This makes the
+  pipeline strongly reproducible — one commit names one dataset by hash, and a fresh clone
+  plus `dvc pull` returns it byte-identically. It also means two things worth saying plainly:
+  the nightly job scores a slice of the same 2010 file rather than a genuinely new export,
+  and the drift detected is a real shift that happened in 2008–2010 being **replayed**, not
+  one observed as it happens. The shift is real data rather than injected noise, which is
+  why this dataset was chosen; it is not live.
 - **Not deployed.** Every cost figure is projected from Lab 5's verified rates, not billed.
 - **No registered model**, because the gate refuses the current one. Correct, and the honest
   next step is training on a recent window rather than tuning harder.

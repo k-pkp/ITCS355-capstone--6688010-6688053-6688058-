@@ -34,6 +34,9 @@ and hides the shift entirely.
 long the call lasted, unknown when the list is built; including it appears to raise lift to
 2.17×, all of it unavailable in production.
 *`pdays` 999 is a sentinel, not a duration*, in 96.3% of rows.
+*The data is historical and the system is not live* — the campaign ended in November 2010.
+Scoring runs against a slice of that same file rather than a new export, and the drift the
+monitoring detects is a real shift being replayed rather than one observed now.
 
 **Ethical considerations.** The model orders who is called first, so its harm is an unwanted
 call rather than a denied service. It nonetheless uses `age`, `job`, `marital` and
