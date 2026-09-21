@@ -8,7 +8,10 @@ a refusal nothing is registered and the script exits non-zero.
 
 The refusal path is the one that matters. A gate only ever exercised by models that pass is
 a gate nobody has seen work, and the first time it blocks something will be the first time
-anyone finds out whether it can.
+anyone finds out whether it can. This one refused first and passed later, and both
+decisions are recorded: reports/bank-gate-decision.json holds the current one, and
+reports/bank-export-evaluation.md holds the refusal and what was wrong with the question it
+was answering.
 """
 from __future__ import annotations
 

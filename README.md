@@ -1,9 +1,15 @@
 # ITCS355 Capstone — call-list ranker
 
 Ranks a bank's customer contact list so agents call the most promising people first,
-published as a nightly batch. Built to demonstrate an operational system, not a model:
-**model accuracy carries no marks here, and this model currently loses to a single column.**
-That is recorded rather than hidden, and the evaluation gate refuses to register it.
+published as a nightly batch to a schedule on Google Cloud. Built to demonstrate an
+operational system, not a model.
+
+**The model appeared to lose to a single column, and the interesting part is that the
+measurement was wrong.** Sorting customers by the interbank rate — a number identical for
+everyone contacted in the same week — beat the model when a whole year of calls was ranked
+in one go. It cannot beat anything inside one night's export, which is the only thing the
+job ever ranks. Fixing what was measured, and retraining on a recent window, changed the
+gate's verdict from refuse to pass. Both runs are in the repository.
 
 ---
 
