@@ -55,6 +55,21 @@ already visible. The failure this project is built around is a job that *succeed
 publishes the wrong list. The metric that separates those two is whether a list was
 published at all, and the refusal paths are the only thing that can drive it to zero.
 
+## The run that is live now
+
+The image was rebuilt after the model was retrained and registered, and the scheduled job
+was repointed at the new digest. Forced to run, it produced:
+
+| | |
+|---|---|
+| Vertex job `7218116540099461120` | SUCCEEDED |
+| Published | `gs://itcs355-6688010/capstone/call-lists/call-list-2026-09-21.csv`, 500 rows |
+| `published` metric | 1 at 01:58:45Z |
+| Duration | 12.31 s |
+
+The list it published is ranked by `bank-call-list-ranker` version 1 — the version the gate
+admitted, with its lineage in [`bank-registry.md`](bank-registry.md).
+
 ## Three failures on the way to a working deployment
 
 Each one was found by running it, and each would have been invisible from reading the code.
