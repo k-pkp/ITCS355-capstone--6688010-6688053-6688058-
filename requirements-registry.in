@@ -1,0 +1,11 @@
+# Tooling for registering a model, kept out of requirements.in on purpose.
+#
+# MLflow and its dependencies add well over a hundred megabytes to an image that only needs
+# to read a CSV, score it and write a CSV back. Lab 5 measured the container registry at
+# 38% of that project's bill, nearly all of it images nobody deletes, so an unused
+# dependency in the serving image is a recurring cost rather than an untidiness.
+#
+# Install with:
+#     uv pip install -r requirements.txt -r requirements-registry.txt
+-r requirements.in
+mlflow==3.16.1

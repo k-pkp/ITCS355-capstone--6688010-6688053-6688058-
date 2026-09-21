@@ -25,7 +25,7 @@ import pandas as pd
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
-from scripts.train_bank import SEED, train_model
+from scripts.train_bank import SEED, TRAINING_WINDOW_ROWS, recent_window, train_model
 from src.bank import contract, evaluate, features, gate, splits
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
@@ -43,6 +43,9 @@ def parse_command_line() -> argparse.Namespace:
     parser.add_argument("--dataset", type=Path, default=DATASET)
     parser.add_argument("--call-budget", type=int, default=evaluate.DEFAULT_CALL_BUDGET)
     parser.add_argument("--model-name", default=MODEL_NAME)
+    parser.add_argument("--train-window", type=int, default=TRAINING_WINDOW_ROWS,
+                        help="how many of the most recent rows before the split point to "
+                             "train on; 0 means all of them")
     return parser.parse_args()
 
 
@@ -117,7 +120,17 @@ def register_in_mlflow(model, lineage: dict, model_name: str) -> str:
         mlflow.log_metric("lift", lineage["metric_lift"])
         mlflow.set_tags({key: str(value) for key, value in lineage.items()})
 
-        info = mlflow.sklearn.log_model(model, name="model")
+        # MLflow refuses to serialise this model type without being told it is trusted.
+        # The warning is about loading a model file from somewhere else: the tree predictor
+        # stores raw node indices that scikit-learn indexes without bounds checking, so a
+        # crafted file can crash the process. This model was fitted a few lines ago in this
+        # same process, and the one type named here is the only one being trusted.
+        info = mlflow.sklearn.log_model(
+            model, name="model",
+            skops_trusted_types=[
+                "sklearn.ensemble._hist_gradient_boosting.predictor.TreePredictor"
+            ],
+        )
         version = mlflow.register_model(model_uri=info.model_uri, name=model_name)
 
         client = mlflow.MlflowClient()
@@ -140,21 +153,28 @@ def main() -> int:
                          "\n".join(str(violation) for violation in violations))
 
     split = splits.split_by_time(dataset)
-    train_features = features.build_features(split.train)
-    train_target = features.build_target(split.train)
+    history = pd.concat([split.train, split.validation])
+    training_frame = recent_window(history, options.train_window)
+
+    train_features = features.build_features(training_frame)
+    train_target = features.build_target(training_frame)
     test_features = features.build_features(split.test)
     test_target = features.build_target(split.test).to_numpy()
 
-    print(f"training on {len(split.train):,} rows", flush=True)
+    print(f"training on {len(training_frame):,} rows", flush=True)
     model = train_model(train_features, train_target)
-    candidate = evaluate.score_ranking(
-        model.predict_proba(test_features)[:, 1], test_target, options.call_budget)
+
+    # Scored the way the deployed job is judged: inside one month's calls, never across
+    # the whole period. reports/bank-export-evaluation.md has why that distinction decides
+    # whether this model passes or fails.
+    candidate = evaluate.score_within_contact_months(
+        model.predict_proba(test_features)[:, 1], test_target, split.test)
 
     baselines = {
-        "file_order": evaluate.score_ranking(
-            evaluate.baseline_file_order(split.test), test_target, options.call_budget),
-        "euribor3m": evaluate.score_ranking(
-            evaluate.baseline_single_column(split.test), test_target, options.call_budget),
+        "file_order": evaluate.score_within_contact_months(
+            evaluate.baseline_file_order(split.test), test_target, split.test),
+        "euribor3m": evaluate.score_within_contact_months(
+            evaluate.baseline_single_column(split.test), test_target, split.test),
     }
 
     lineage = {
@@ -163,8 +183,10 @@ def main() -> int:
         "data_version": dvc_data_version(DATASET_POINTER),
         "seed": SEED,
         "feature_names_hash": feature_names_fingerprint(),
-        "train_rows": len(split.train),
+        "train_rows": len(training_frame),
         "metric_lift": round(candidate.lift, 4),
+        "metric": "within-month lift at the supervisor's call share",
+        "worst_month_lift": round(candidate.worst_month_lift, 4),
         "trained_at_utc": datetime.now(timezone.utc).isoformat(),
         "call_budget": options.call_budget,
     }
@@ -182,6 +204,16 @@ def main() -> int:
         "passed": decision.passed,
         "reasons": decision.reasons,
         "candidate_lift": candidate.lift,
+        "candidate_worst_month_lift": candidate.worst_month_lift,
+        # A list rather than a dict keyed by month name. The campaign spans two and a half
+        # years, so "may" appears three times in the test period, and a dict silently kept
+        # the last one -- thirteen measured months written out as eight.
+        "candidate_month_lifts": [
+            {"month": label, "rows": rows, "lift": lift}
+            for label, rows, lift in zip(candidate.month_labels,
+                                         candidate.month_rows,
+                                         candidate.month_lifts)
+        ],
         "baseline_lifts": {name: score.lift for name, score in baselines.items()},
         "minimum_margin": gate.MINIMUM_LIFT_MARGIN,
         "lineage": lineage,
@@ -189,8 +221,9 @@ def main() -> int:
 
     if not decision.passed:
         print("nothing was registered.")
-        print("The gate is doing its job: this model would rank customers worse than "
-              "sorting them by a single column.")
+        print("The gate is doing its job. The decision and its reasons are in "
+              "reports/bank-gate-decision.json, which is the record of what was refused "
+              "and why -- a registry holding only models that passed cannot answer that.")
         return 1
 
     joblib.dump(model, REPORTS_DIR / "bank-model.joblib")

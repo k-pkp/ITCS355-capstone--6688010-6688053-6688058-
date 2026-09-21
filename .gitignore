@@ -1,5 +1,5 @@
-# The OpenAQ API key is a credential. Committing one is an automatic deduction
-# under the capstone brief, so the file that holds it never enters git.
+# Credentials never enter git. Committing one is an automatic deduction under the
+# capstone brief, and a secret in history stays there after the file is deleted.
 .env
 secrets.env
 

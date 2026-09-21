@@ -1,12 +1,17 @@
 {
   "seed": 20260101,
   "call_budget": 500,
-  "train_rows": 24712,
+  "train_window_rows": 4000,
+  "train_rows": 4000,
   "test_rows": 8239,
-  "train_subscribe_rate": 0.04807381029459372,
+  "train_subscribe_rate": 0.12125,
   "test_subscribe_rate": 0.30828984100012136,
-  "model_lift": 1.3428921259842521,
-  "baseline_file_order_lift": 0.20759685039370082,
-  "baseline_euribor_lift": 1.8034976377952758,
-  "leaky_duration_lift": 2.1732795275590555
+  "within_month_model_lift": 1.3395873557145563,
+  "within_month_model_worst": 1.251750700280112,
+  "within_month_baseline_file_order_lift": 0.8055777958292761,
+  "within_month_baseline_euribor_lift": 0.9646893603903194,
+  "within_month_leaky_duration_lift": 2.863448123682051,
+  "whole_period_model_lift": 1.9721700787401577,
+  "whole_period_baseline_file_order_lift": 0.20759685039370082,
+  "whole_period_baseline_euribor_lift": 1.8034976377952758
 }

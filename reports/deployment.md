@@ -7,7 +7,7 @@ that has fired on a real refusal.
 
 | Component | Detail |
 |---|---|
-| Container image | `itcs355-capstone@sha256:472a2777…a768b2`, built for `linux/amd64`, base pinned by digest, runs as a non-root user |
+| Container image | `itcs355-capstone@sha256:e55bc7bd…c166dd6`, built for `linux/amd64`, base pinned by digest, runs as a non-root user |
 | Scheduled job | Cloud Scheduler `itcs355-capstone-nightly`, `0 2 * * *` Asia/Bangkok |
 | Compute | Vertex AI custom job, `e2-standard-4`, **spot** |
 | Identity | runs as `itcs355-train`, which can read and write storage and submit jobs, and nothing else |

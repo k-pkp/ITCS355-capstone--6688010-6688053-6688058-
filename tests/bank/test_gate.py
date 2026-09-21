@@ -7,7 +7,7 @@ tidy-up" of the comparison operator would move.
 """
 from __future__ import annotations
 
-from src.bank import gate
+from src.bank import evaluate, gate
 from src.bank.evaluate import RankingScore
 
 
@@ -133,3 +133,55 @@ def test_every_failing_reason_is_reported_at_once() -> None:
 
     assert not decision.passed
     assert len(decision.reasons) >= 3, decision.reasons
+
+
+def make_within_month_score(month_lifts: list[float]) -> evaluate.WithinMonthScore:
+    """Build a within-month score from a list of per-month lifts, equally weighted."""
+    labels = [f"month{index}" for index in range(len(month_lifts))]
+    rows = [1000] * len(month_lifts)
+    weighted_lift = sum(month_lifts) / len(month_lifts)
+    return evaluate.WithinMonthScore(
+        lift=weighted_lift,
+        month_lifts=month_lifts,
+        month_labels=labels,
+        month_rows=rows,
+    )
+
+
+def test_a_good_average_does_not_excuse_a_month_worse_than_random():
+    """Four months averaging 1.4 are refused when one of them ranked below 1.0.
+
+    The average is what the model is worth over a year. The worst month is what it was
+    worth to the people who worked that month, and no later month gives it back.
+    """
+    candidate = make_within_month_score([2.4, 1.5, 1.3, 0.4])
+    baselines = {"euribor3m": make_within_month_score([1.0, 1.0, 1.0, 1.0])}
+
+    decision = gate.evaluate_candidate(candidate, baselines, complete_lineage())
+
+    assert not decision.passed
+    assert any("worse than" in reason for reason in decision.reasons)
+    assert any("month3" in reason for reason in decision.reasons)
+
+
+def test_every_month_above_the_floor_passes():
+    """The same mean, spread evenly across months, is admitted."""
+    candidate = make_within_month_score([1.45, 1.40, 1.35, 1.30])
+    baselines = {"euribor3m": make_within_month_score([1.0, 1.0, 1.0, 1.0])}
+
+    decision = gate.evaluate_candidate(candidate, baselines, complete_lineage())
+
+    assert decision.passed, decision.reasons
+
+
+def test_a_whole_period_score_is_not_treated_as_having_passed_the_month_check():
+    """A plain RankingScore carries no months, so the month check finds nothing to check.
+
+    It must not be silently recorded as having cleared a check it never took, and it must
+    not crash the gate either.
+    """
+    candidate = make_score(2.0)
+
+    reasons = gate.check_no_month_is_worse_than_random(candidate)
+
+    assert reasons == []

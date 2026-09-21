@@ -100,22 +100,22 @@ Two more guarded the same way:
 
 - **`duration`** correlates 0.405 with the outcome and is the most predictive column. It
   records how long the call lasted, which is unknown when the list is built. Including it
-  appears to lift 1.34× → 2.17×, all of it unavailable in production.
+  appears to lift 1.34× → 2.86× within month, all of it unavailable in
+  production.
 - **`pdays` uses 999** for "never previously contacted", in 96.3% of rows. Split into a flag
   and a day count before the model sees it.
 
 ---
 
-## Results, as measured
+## Results, and the measurement that was wrong
 
-| Ranking | Subscriptions in top 500 | Lift |
+The first version of this project reported these numbers, and the gate refused the model:
+
+| Ranking, whole test period at once | Subscriptions in top 500 | Lift |
 |---|--:|--:|
 | Call in file order | 32 | 0.21× |
 | This model | 207 | 1.34× |
 | **Sort by `euribor3m` alone** | **278** | **1.80×** |
-| With `duration` (leaky, never registered) | 335 | 2.17× |
-
-**The model loses.** The evaluation gate refuses it:
 
 ```
 GATE FAIL
@@ -123,12 +123,48 @@ GATE FAIL
     by the required 0.05; it needs 1.85
 ```
 
-The margin is measured, not chosen: five seeds give 1.3105–1.3494 lift, sd 0.0152, so 0.05
-sits above two standard deviations. A model clearing it has improved rather than drawn a
-luckier seed.
+**One column with no per-customer information was beating the model.** `euribor3m` is the
+interbank rate — identical for everyone contacted in the same week. It cannot tell one
+customer from another. That should stop work, not prompt a retrain.
 
-The cause is the shift. The model learned a 4.8% world and met a 30.8% one, while
-`euribor3m` works as a clock — low rate means late campaign means easy subscriptions.
+It won because the measurement let it answer a different question. Ranking 8,239 rows that
+span months by `-euribor3m` sorts them, near enough, **by date**, and the late months are
+when people subscribed. The deployed job never gets that chance: it ranks one export, whose
+customers were all contacted at about the same time.
+
+Measured the way the job actually runs — inside one contact month:
+
+| Ranking, within one month | Lift | Worst month |
+|---|--:|--:|
+| Call in file order | 0.81× | 0.64× |
+| Sort by `euribor3m` alone | 0.96× | 0.41× |
+| **This model** | **1.34×** | **1.25×** |
+| With `duration` (leaky, never registered) | 2.86× | 1.33× |
+
+The baseline at 0.96× is not a strong opponent narrowly beaten. It is **no better than
+calling people in no particular order**, which is what a column that is constant inside a
+batch should be.
+
+A second, independent fix: the model now trains on the most recent 4,000 rows rather than
+all 24,712, because the campaign spans a financial crisis and older rows describe a
+different world. The window size was chosen on the validation period. That change alone
+raises even the old whole-period score from 1.34× to 1.97×, which clears the old gate too
+— the model was undertrained *and* the measurement was wrong.
+
+```
+candidate  within month: lift 1.34x across 13 months, worst month 1.25x
+GATE PASS
+```
+
+Registered as `bank-call-list-ranker` version 1 with nine lineage fields:
+[`reports/bank-registry.md`](reports/bank-registry.md). Full working, including a
+hypothesis that was tested and turned out wrong:
+[`reports/bank-export-evaluation.md`](reports/bank-export-evaluation.md).
+
+**The measured limit.** On the validation period — the crisis onset — the same model scores
+1.07× within month and falls below 1.0 in two of its four months. This model's skill does
+not survive a regime break. That is why the drift monitor exists, and it is in the
+[model card](reports/model-card.md) as a known limit rather than a footnote.
 
 ---
 
@@ -154,7 +190,7 @@ alert that has already fired on a real refusal.
 |---|---|
 | Schedule | Cloud Scheduler `itcs355-capstone-nightly`, `0 2 * * *` Asia/Bangkok |
 | Compute | Vertex AI custom job, `e2-standard-4`, spot |
-| Image | `itcs355-capstone@sha256:472a2777…a768b2`, base pinned by digest, non-root |
+| Image | `itcs355-capstone@sha256:e55bc7bd…c166dd6`, base pinned by digest, non-root |
 | Identity | `itcs355-train` — read and write storage, submit jobs, nothing else |
 | Output | `gs://itcs355-6688010/capstone/call-lists/call-list-YYYY-MM-DD.csv` |
 | Alert | fires when `published < 1`, i.e. when a run **refused** rather than when it crashed |
@@ -227,7 +263,9 @@ silent:
 - **No billing export**, so the cost figures are rebuilt from Lab 5's measured rates
   and this project's own job durations rather than read off an invoice. The deployment
   itself is real; the accounting of it is measurement.
-- **No registered model**, because the gate refuses the current one. Correct, and the honest
-  next step is training on a recent window rather than tuning harder.
+- **The registry is a local SQLite file**, not a hosted one, so "registered" means
+  registered on this machine. Its contents are written out to
+  [`reports/bank-registry.md`](reports/bank-registry.md) so the claim can be checked
+  without it.
 - **No group-fairness measurement.** Noted in the [model card](reports/model-card.md)
   rather than omitted.
