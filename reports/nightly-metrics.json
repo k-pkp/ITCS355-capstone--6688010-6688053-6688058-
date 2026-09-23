@@ -1,18 +1,10 @@
 {
-  "run_at_utc": "2026-09-21T03:20:44.669648+00:00",
-  "input": "gs://itcs355-6688010/capstone/incoming/contacts.csv",
-  "published": true,
-  "refusal_reason": null,
+  "run_at_utc": "2026-09-23T18:27:51.602749+00:00",
+  "input": "/tmp/itcs355-demo/contacts.csv",
+  "published": false,
+  "refusal_reason": "unapproved_model",
   "input_age_hours": 0.0,
-  "input_modified_at_utc": "2026-09-21T03:20:39.395000+00:00",
+  "input_modified_at_utc": "2026-09-23T18:27:48.278372+00:00",
   "rows_in": 600,
-  "model_sha256": "70b8a6117a187371eec6d2e956fc2184281308e72f1ec3fb36d0affc7193d79b",
-  "call_budget": 100,
-  "published_uri": "gs://itcs355-6688010/capstone/call-lists/call-list-2026-09-21.csv",
-  "rows_published": 100,
-  "score_median": 0.1046,
-  "score_min": 0.0642,
-  "score_max": 0.5239,
-  "duration_seconds": 2.12,
-  "output": "/tmp/call-lists/call-list-2026-09-21.csv"
+  "detail": "the model at /tmp/itcs355-demo/unapproved-model.joblib is not the approved one.\n  approved: 70b8a6117a187371eec6d2e956fc2184281308e72f1ec3fb36d0affc7193d79b (registered version 2)\n  serving:  46722e09154c67f4f0028f11c5185177f12998879f228ad8a498a90b383aada0\nThe gate approved a model and the image contains a different one."
 }
