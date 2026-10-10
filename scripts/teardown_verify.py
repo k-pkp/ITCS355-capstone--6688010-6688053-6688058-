@@ -34,6 +34,26 @@ REGION = "asia-southeast1"
 # nobody dares run.
 DVC_REMOTE_PREFIX = f"gs://{GCP_PROJECT}/capstone/dvc"
 
+# The Artifact Registry repository is shared with the lab submissions, which are graded
+# separately and are not finished yet. These image repositories belong to those labs, so
+# a capstone teardown leaves them alone and says so rather than quietly counting them as
+# capstone resources left running. They are named here one by one, because a rule like
+# "anything without capstone in the name" would silently retain a capstone image that
+# happened to be named differently.
+IMAGES_KEPT_FOR_OTHER_COURSEWORK = (
+    "itcs355-lab1",
+    "itcs355-lab2",
+    "itcs355-lab4",
+    "itcs355-lab5",
+    "itcs355-serve",
+)
+
+
+def belongs_to_another_submission(image_repository: str) -> bool:
+    """Say whether an image repository belongs to the labs rather than the capstone."""
+    repository_name = image_repository.rsplit("/", 1)[-1]
+    return repository_name in IMAGES_KEPT_FOR_OTHER_COURSEWORK
+
 
 def run_gcloud(arguments: list[str]) -> tuple[bool, str]:
     """Run one gcloud command, returning whether it worked and what it said."""
@@ -156,9 +176,21 @@ def main() -> int:
             stripped = line.strip()
             if stripped and stripped not in resources:
                 resources.append(stripped)
-        findings[name] = {"checked": True, "count": len(resources),
-                          "resources": resources}
-        print(f"  {name:<20} {len(resources)} running")
+        if name == "container_images":
+            kept_for_labs = [image for image in resources
+                             if belongs_to_another_submission(image)]
+            resources = [image for image in resources
+                         if not belongs_to_another_submission(image)]
+            findings[name] = {"checked": True, "count": len(resources),
+                              "resources": resources,
+                              "kept_for_other_coursework": kept_for_labs}
+            print(f"  {name:<20} {len(resources)} running "
+                  f"({len(kept_for_labs)} kept for the labs)")
+        else:
+            findings[name] = {"checked": True, "count": len(resources),
+                              "resources": resources}
+            print(f"  {name:<20} {len(resources)} running")
+
         if resources:
             still_running.append(name)
 
@@ -197,7 +229,14 @@ def main() -> int:
         print_teardown_commands(findings)
         return 1
 
-    print("\nNothing is running that bills by the hour.")
+    kept_for_labs = findings.get("container_images", {}).get(
+        "kept_for_other_coursework", [])
+    if kept_for_labs:
+        print(f"\nkept for the lab submissions, which are graded separately: "
+              f"{len(kept_for_labs)} image repositories")
+        print("Those come down when the labs are submitted, not with the capstone.")
+
+    print("\nNothing of the capstone's is running that bills by the hour.")
     return 0
 
 

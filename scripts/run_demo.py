@@ -164,7 +164,23 @@ def parse_command_line() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Run the capstone demonstration")
     parser.add_argument("--only", choices=sorted(SCENES),
                         help="run one scene, for rehearsing a single moment")
+    parser.add_argument("--pause", action="store_true",
+                        help="wait for Enter between scenes, for presenting live")
     return parser.parse_args()
+
+
+def wait_for_presenter(next_scene: str) -> None:
+    """Hold between scenes so the room can read one refusal before the next.
+
+    The whole sequence runs in about five seconds, which is faster than anybody can
+    explain it. Presented live, the pause is what turns five exit codes into five
+    separate points.
+    """
+    try:
+        input(f"\n  [Enter] for the next scene: {next_scene}  ")
+    except EOFError:
+        # Nothing on standard input, which is the case in CI. Carry on without pausing.
+        pass
 
 
 def main() -> int:
@@ -180,7 +196,9 @@ def main() -> int:
     scenes_to_run = [options.only] if options.only else list(SCENES)
     outcomes = []
 
-    for scene_name in scenes_to_run:
+    for scene_index, scene_name in enumerate(scenes_to_run):
+        if options.pause and scene_index > 0:
+            wait_for_presenter(scene_name)
         exit_code = SCENES[scene_name](export_path)
         expected = EXPECTED_EXIT_CODES[scene_name]
         outcomes.append((scene_name, exit_code, expected))
