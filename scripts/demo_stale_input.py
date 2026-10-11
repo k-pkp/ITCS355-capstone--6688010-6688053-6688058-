@@ -80,7 +80,9 @@ def run_nightly_job(export_path: Path, call_budget: int,
     if completed.returncode not in (0, 2):
         print(completed.stderr)
 
-    metrics = json.loads(METRICS_PATH.read_text()) if METRICS_PATH.exists() else {}
+    metrics = {}
+    if METRICS_PATH.exists():
+        metrics = json.loads(METRICS_PATH.read_text(encoding="utf-8"))
     return completed.returncode, metrics
 
 
@@ -162,7 +164,8 @@ def main() -> int:
         "",
     ]
     REPORTS_DIR.mkdir(parents=True, exist_ok=True)
-    (REPORTS_DIR / "stale-input-demo.md").write_text("\n".join(lines))
+    (REPORTS_DIR / "stale-input-demo.md").write_text("\n".join(lines),
+                                                 encoding="utf-8")
 
     print(f"wrote {REPORTS_DIR / 'stale-input-demo.md'}")
 

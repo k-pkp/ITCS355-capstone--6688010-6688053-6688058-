@@ -251,7 +251,8 @@ def main() -> int:
         "keeps it out.",
         "",
     ]
-    (options.out_dir / "bank-training.md").write_text("\n".join(lines))
+    (options.out_dir / "bank-training.md").write_text("\n".join(lines),
+                                                  encoding="utf-8")
 
     metrics = {
         "seed": SEED,
@@ -269,7 +270,8 @@ def main() -> int:
         "whole_period_baseline_file_order_lift": whole_period["baseline_file_order"].lift,
         "whole_period_baseline_euribor_lift": whole_period["baseline_euribor"].lift,
     }
-    (options.out_dir / "bank-metrics.json").write_text(json.dumps(metrics, indent=2))
+    (options.out_dir / "bank-metrics.json").write_text(
+        json.dumps(metrics, indent=2), encoding="utf-8")
 
     print(f"\nwrote {options.out_dir / 'bank-training.md'}")
     return 0

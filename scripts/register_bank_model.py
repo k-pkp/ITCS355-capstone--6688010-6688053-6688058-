@@ -107,7 +107,7 @@ def dvc_data_version(pointer_path: Path) -> str:
     if not pointer_path.exists():
         return ""
 
-    for line in pointer_path.read_text().splitlines():
+    for line in pointer_path.read_text(encoding="utf-8").splitlines():
         # The hash sits under a YAML list item, so the line reads "- md5: ..." rather
         # than "md5: ...". Matching only the latter returned an empty string, and the
         # gate refused the registration for a missing lineage field -- which is how this
@@ -292,7 +292,8 @@ def main() -> int:
     serving = promotion.read_approval(APPROVAL_PATH)
 
     REPORTS_DIR.mkdir(parents=True, exist_ok=True)
-    (REPORTS_DIR / "bank-gate-decision.json").write_text(json.dumps({
+    gate_decision_path = REPORTS_DIR / "bank-gate-decision.json"
+    gate_decision_path.write_text(json.dumps({
         "decided_at_utc": datetime.now(timezone.utc).isoformat(),
         "passed": decision.passed,
         "reasons": decision.reasons,
@@ -311,7 +312,7 @@ def main() -> int:
         "baseline_lifts": {name: score.lift for name, score in baselines.items()},
         "minimum_margin": gate.MINIMUM_LIFT_MARGIN,
         "lineage": lineage,
-    }, indent=2))
+    }, indent=2), encoding="utf-8")
 
     if not decision.passed:
         print("nothing was registered.")

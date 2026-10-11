@@ -97,7 +97,7 @@ def main() -> int:
         "",
     ]
     options.out.parent.mkdir(parents=True, exist_ok=True)
-    options.out.write_text("\n".join(lines))
+    options.out.write_text("\n".join(lines), encoding="utf-8")
 
     print(f"\n{len(alerting)} of {len(scores)} columns above the threshold")
     print(f"wrote {options.out}")

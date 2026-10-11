@@ -61,7 +61,8 @@ def hash_file(path: Path) -> str:
 def write_approval(path: Path, approval: Approval) -> None:
     """Record which model bytes were approved, for the serving job to check against."""
     path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text(json.dumps(approval.as_dict(), indent=2) + "\n")
+    path.write_text(json.dumps(approval.as_dict(), indent=2) + "\n",
+                    encoding="utf-8")
 
 
 def read_approval(path: Path) -> Approval | None:
@@ -73,7 +74,7 @@ def read_approval(path: Path) -> Approval | None:
     if not path.exists():
         return None
 
-    record = json.loads(path.read_text())
+    record = json.loads(path.read_text(encoding="utf-8"))
     return Approval(
         model_sha256=record["model_sha256"],
         registered_version=str(record["registered_version"]),

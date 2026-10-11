@@ -121,7 +121,7 @@ def main() -> int:
         ),
     }
     (options.out_dir / "dataset.json").write_text(
-        json.dumps(metadata, indent=2)
+        json.dumps(metadata, indent=2), encoding="utf-8"
     )
 
     print(f"wrote {destination}  ({row_count:,} rows)")

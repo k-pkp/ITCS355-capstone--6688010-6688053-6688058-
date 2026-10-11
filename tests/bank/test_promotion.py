@@ -94,4 +94,4 @@ def test_the_approval_survives_a_round_trip(tmp_path):
     promotion.write_approval(approval_path, original)
 
     assert promotion.read_approval(approval_path) == original
-    assert json.loads(approval_path.read_text())["registered_version"] == "7"
+    assert json.loads(approval_path.read_text(encoding="utf-8"))["registered_version"] == "7"

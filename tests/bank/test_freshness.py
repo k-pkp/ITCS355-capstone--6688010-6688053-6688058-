@@ -25,7 +25,7 @@ def write_file_aged(directory: Path, hours_old: float) -> Path:
     be run, and a gate whose test is never run is not guarded.
     """
     path = directory / "contacts.csv"
-    path.write_text("age;job\n35;technician\n")
+    path.write_text("age;job\n35;technician\n", encoding="utf-8")
 
     modified_at = datetime.now(timezone.utc) - timedelta(hours=hours_old)
     timestamp = modified_at.timestamp()

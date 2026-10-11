@@ -217,7 +217,7 @@ def main() -> int:
         },
     }
     REPORT_PATH.parent.mkdir(parents=True, exist_ok=True)
-    REPORT_PATH.write_text(json.dumps(payload, indent=2))
+    REPORT_PATH.write_text(json.dumps(payload, indent=2), encoding="utf-8")
 
     print(f"\nkept on purpose: {DVC_REMOTE_PREFIX} (the versioned dataset)")
     print(f"wrote {REPORT_PATH}")

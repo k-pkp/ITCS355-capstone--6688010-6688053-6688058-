@@ -72,7 +72,7 @@ def main() -> int:
 
     REPORTS_DIR.mkdir(parents=True, exist_ok=True)
     output_path = REPORTS_DIR / "bank-registry.md"
-    output_path.write_text("\n".join(lines))
+    output_path.write_text("\n".join(lines), encoding="utf-8")
     print(f"wrote {output_path} — {len(versions)} version(s)")
     return 0
 

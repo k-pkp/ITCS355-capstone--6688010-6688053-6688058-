@@ -57,6 +57,22 @@ CORE_SCENES = ("happy", "stale", "category", "empty", "model")
 EXTRA_SCENES = ("nogate", "drift", "guard")
 
 
+def use_utf8_for_output() -> None:
+    """Print UTF-8 whatever the console's own encoding is.
+
+    The scenes print em dashes and times signs. Windows gives a redirected stream the
+    system code page rather than UTF-8, so `python scripts/run_demo.py > out.txt`
+    raised UnicodeEncodeError on a teammate's machine while the same command printed
+    fine to his terminal. Reconfiguring here costs nothing and removes the difference.
+    """
+    for stream in (sys.stdout, sys.stderr):
+        try:
+            stream.reconfigure(encoding="utf-8")
+        except (AttributeError, ValueError):
+            # Already wrapped, or not a real stream. Nothing to do.
+            pass
+
+
 def announce(scene: str, title: str, why: str) -> None:
     """Print the heading for one scene."""
     print(f"\n{'=' * 78}")
@@ -263,6 +279,7 @@ def wait_for_presenter(next_scene: str) -> None:
 
 def main() -> int:
     """Run every scene and report whether each refused for the reason it should."""
+    use_utf8_for_output()
     options = parse_command_line()
     if not DATASET.exists():
         raise SystemExit(f"{DATASET} not found; run `dvc pull`")

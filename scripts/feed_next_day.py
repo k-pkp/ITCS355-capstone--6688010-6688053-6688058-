@@ -126,7 +126,7 @@ def read_cursor() -> int:
     except FileNotFoundError:
         return 0
 
-    return int(json.loads(local_copy.read_text())["rows_published"])
+    return int(json.loads(local_copy.read_text(encoding="utf-8"))["rows_published"])
 
 
 def write_cursor(rows_published: int, exhausted: bool) -> None:
@@ -136,7 +136,7 @@ def write_cursor(rows_published: int, exhausted: bool) -> None:
         "rows_published": rows_published,
         "exhausted": exhausted,
         "updated_at_utc": datetime.now(timezone.utc).isoformat(),
-    }, indent=2) + "\n")
+    }, indent=2) + "\n", encoding="utf-8")
     cloud.upload(local_copy, CURSOR_OBJECT)
 
 
