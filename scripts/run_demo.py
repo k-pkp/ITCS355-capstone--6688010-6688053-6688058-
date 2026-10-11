@@ -1,7 +1,8 @@
 """Run the capstone demonstration end to end, one refusal at a time.
 
-    python scripts/run_demo.py              # the whole sequence
-    python scripts/run_demo.py --only stale # one scene, for rehearsing
+    python scripts/run_demo.py              # the five scenes of the talk
+    python scripts/run_demo.py --all        # those five, then three more
+    python scripts/run_demo.py --only drift # one scene, for rehearsing
 
 Written as a script rather than a list of commands in a runbook because a demo typed live
 is a demo that can fail on a typo in front of the person grading it. Every scene here runs
@@ -42,7 +43,18 @@ EXPECTED_EXIT_CODES = {
     "category": 3,
     "empty": 3,
     "model": 5,
+    "nogate": 0,
+    "drift": 2,
+    "guard": 0,
 }
+
+# The five that tell the story in two minutes. The rest are held back so the
+# demonstration stays the length it was rehearsed at.
+CORE_SCENES = ("happy", "stale", "category", "empty", "model")
+
+# Run with --all. Each one answers a question that has been asked before, and none
+# of them needs the cloud.
+EXTRA_SCENES = ("nogate", "drift", "guard")
 
 
 def announce(scene: str, title: str, why: str) -> None:
@@ -150,12 +162,76 @@ def scene_model(export_path: Path) -> int:
     return run_nightly_job(export_path, ["--model", str(substitute_path)])
 
 
+def scene_nogate(export_path: Path) -> int:
+    """The same stale file again, with the freshness gate switched off.
+
+    Scene two shows the job refusing. This shows what it was refusing to do, which is
+    the part an examiner cannot otherwise see: the run succeeds, a full call list goes
+    out, and nothing anywhere reports a problem.
+    """
+    announce("nogate", "The counterfactual — the same stale file, gate off",
+             "Yesterday's export again, scored with --skip-freshness-gate. This is what "
+             "the gate was preventing.")
+
+    stale_path = DEMO_DIR / "contacts-stale.csv"
+    if not stale_path.exists():
+        shutil.copy(export_path, stale_path)
+    two_days_ago = datetime.now() - timedelta(days=2)
+    timestamp = two_days_ago.timestamp()
+    import os
+    os.utime(stale_path, (timestamp, timestamp))
+
+    return run_nightly_job(stale_path, ["--skip-freshness-gate"])
+
+
+def scene_drift(export_path: Path) -> int:
+    """The drift detector, scoring the held-out period against the training window.
+
+    Nothing in the nightly job notices that the world has moved; this is the check that
+    does. It writes its report into the demo directory rather than into reports/, so a
+    rehearsal does not leave the repository dirty.
+    """
+    announce("drift", "Drift — has the world moved since training?",
+             "PSI for every column the model reads, current period against the window "
+             "it was trained on.")
+
+    command = [
+        sys.executable, str(PROJECT_ROOT / "scripts" / "check_drift.py"),
+        "--out", str(DEMO_DIR / "bank-drift.md"),
+    ]
+    result = subprocess.run(command, cwd=PROJECT_ROOT)
+    return result.returncode
+
+
+def scene_guard(export_path: Path) -> int:
+    """The two tests CI runs on every push to keep the leakage traps shut.
+
+    They pass, which is the point: these are the checks standing between the repository
+    and the two mistakes that made the model look good and were not.
+    """
+    announce("guard", "The guards CI runs on every push",
+             "One asserts the call duration never reaches the model. One asserts the "
+             "split is never shuffled.")
+
+    command = [
+        sys.executable, "-m", "pytest", "-q",
+        "tests/bank/test_features.py::test_duration_never_reaches_the_model",
+        "tests/bank/test_splits.py",
+        "-k", "duration or shuffle or chronological",
+    ]
+    result = subprocess.run(command, cwd=PROJECT_ROOT)
+    return result.returncode
+
+
 SCENES = {
     "happy": scene_happy,
     "stale": scene_stale,
     "category": scene_category,
     "empty": scene_empty,
     "model": scene_model,
+    "nogate": scene_nogate,
+    "drift": scene_drift,
+    "guard": scene_guard,
 }
 
 
@@ -164,6 +240,8 @@ def parse_command_line() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Run the capstone demonstration")
     parser.add_argument("--only", choices=sorted(SCENES),
                         help="run one scene, for rehearsing a single moment")
+    parser.add_argument("--all", action="store_true",
+                        help="run the three extra scenes after the five of the talk")
     parser.add_argument("--pause", action="store_true",
                         help="wait for Enter between scenes, for presenting live")
     return parser.parse_args()
@@ -193,7 +271,12 @@ def main() -> int:
     (DEMO_DIR / "call-lists").mkdir(exist_ok=True)
     export_path = build_todays_export()
 
-    scenes_to_run = [options.only] if options.only else list(SCENES)
+    if options.only:
+        scenes_to_run = [options.only]
+    elif options.all:
+        scenes_to_run = list(CORE_SCENES) + list(EXTRA_SCENES)
+    else:
+        scenes_to_run = list(CORE_SCENES)
     outcomes = []
 
     for scene_index, scene_name in enumerate(scenes_to_run):

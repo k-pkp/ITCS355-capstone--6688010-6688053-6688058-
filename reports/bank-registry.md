@@ -18,6 +18,24 @@ Written by `scripts/describe_registry.py` from the registry itself, so that the 
 | `trained_at_utc` | `2026-09-21T01:53:14.694650+00:00` |
 | `worst_month_lift` | `1.2518` |
 
+## Version 2
+
+| Lineage field | Value |
+|---|---|
+| `call_budget` | `500` |
+| `data_sha256` | `74adfc578bf77a7ff4bb1ba4a9f8709d9e3c6907342959c2c8416847e0afb4d8` |
+| `data_version` | `f6cb2c1256ffe2836b36df321f46e92c` |
+| `feature_names_hash` | `589bc39141290576` |
+| `git_commit` | `506c150d921f86c87431c9e45ea298c1ee5a2886` |
+| `git_tree_clean` | `True` |
+| `metric` | `within-month lift at the supervisor's call share` |
+| `metric_lift` | `1.3396` |
+| `model_sha256` | `70b8a6117a187371eec6d2e956fc2184281308e72f1ec3fb36d0affc7193d79b` |
+| `seed` | `20260101` |
+| `train_rows` | `4000` |
+| `trained_at_utc` | `2026-09-21T03:14:46.541388+00:00` |
+| `worst_month_lift` | `1.2518` |
+
 ## What each field is for
 
 | Field | Answers |

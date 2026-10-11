@@ -50,15 +50,35 @@ The one-page proposal, as submitted at M2, is [`PROPOSAL.md`](PROPOSAL.md).
 ## Reproduce everything
 
 ```bash
+conda create -n itcs355-capstone python=3.11 -y
+conda activate itcs355-capstone
 pip install -r requirements.txt
 
 python scripts/download_bank_data.py      # or: dvc pull
-pytest -q                                 # 67 tests
+pytest -q                                 # 76 tests
 python scripts/train_bank.py              # trains and scores against baselines
-python scripts/register_bank_model.py     # asks the gate; currently passes
+python scripts/register_bank_model.py     # asks the gate -- see the warning below
 python scripts/check_drift.py             # 6 of 7 columns alerting
 python scripts/demo_stale_input.py        # the failure, with and without the gate
 ```
+
+**`register_bank_model.py` rewrites `reports/approved-model.json`.** It records the hash
+of the model on *your* disk as the approved one, and numbers the registry version from
+*your* local MLflow, which starts empty. Run it on a fresh clone and the repository's
+approval record stops naming the model this project actually approved --
+`70b8a611... version 2` becomes whatever you just trained, version 1. Run it to see the
+gate work, then `git checkout -- reports/approved-model.json` to put the real approval
+back. Do not commit the rewritten file.
+
+This also only reproduces under the pinned environment. The hash is of the serialised
+bytes, and joblib writes different bytes under a different Python: the same model,
+making the same predictions, hashes differently on 3.14 than on 3.11. That is the
+content-addressing working as intended, and it is why the environment is pinned.
+
+An environment of its own matters here rather than being a formality: the release gate
+approved a model by its sha256, and the nightly job refuses any model whose bytes differ. A
+stray scikit-learn version retrains to different bytes and the job correctly refuses to
+publish. `requirements.txt` is pinned with hashes so that cannot happen quietly.
 
 Nothing above needs cloud credentials. `dvc pull` needs access to the GCS remote; the
 download script is the alternative and produces a byte-identical file.
