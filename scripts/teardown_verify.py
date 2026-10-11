@@ -23,6 +23,8 @@ import subprocess
 from datetime import datetime, timezone
 from pathlib import Path
 
+from src.bank import console
+
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 REPORT_PATH = PROJECT_ROOT / "reports" / "teardown-check.json"
 
@@ -63,7 +65,8 @@ def run_gcloud(arguments: list[str]) -> tuple[bool, str]:
 
     try:
         completed = subprocess.run(
-            [gcloud, *arguments], capture_output=True, text=True, timeout=180)
+            [gcloud, *arguments], capture_output=True, text=True,
+            encoding="utf-8", timeout=180)
     except (OSError, subprocess.SubprocessError) as error:
         return False, str(error)
 
@@ -142,6 +145,7 @@ def print_teardown_commands(findings: dict) -> None:
 
 def main() -> int:
     """Check each billing-capable resource type and report what is running."""
+    console.use_utf8_for_output()
     checks = {
         "vertex_endpoints": ["ai", "endpoints", "list",
                              f"--region={REGION}", f"--project={GCP_PROJECT}",

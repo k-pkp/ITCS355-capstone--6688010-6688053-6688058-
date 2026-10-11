@@ -41,7 +41,7 @@ import pandas as pd
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
-from src.bank import cloud, splits
+from src.bank import cloud, console, splits
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 DATASET = PROJECT_ROOT / "data" / "bank" / "bank-additional-full.csv"
@@ -142,6 +142,7 @@ def write_cursor(rows_published: int, exhausted: bool) -> None:
 
 def main() -> int:
     """Publish the next slice of the replay, or stop when the campaign runs out."""
+    console.use_utf8_for_output()
     options = parse_command_line()
 
     if options.publish_source:

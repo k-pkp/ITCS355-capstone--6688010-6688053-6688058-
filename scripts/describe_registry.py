@@ -14,6 +14,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 from scripts.register_bank_model import MLFLOW_TRACKING_URI, MODEL_NAME
+from src.bank import console
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 REPORTS_DIR = PROJECT_ROOT / "reports"
@@ -21,6 +22,7 @@ REPORTS_DIR = PROJECT_ROOT / "reports"
 
 def main() -> int:
     """Read every registered version and write its lineage to a report."""
+    console.use_utf8_for_output()
     import mlflow
 
     mlflow.set_tracking_uri(MLFLOW_TRACKING_URI)

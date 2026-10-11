@@ -19,7 +19,7 @@ import pandas as pd
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
-from src.bank import monitoring, splits
+from src.bank import console, monitoring, splits
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 DATASET = PROJECT_ROOT / "data" / "bank" / "bank-additional-full.csv"
@@ -46,6 +46,7 @@ def parse_command_line() -> argparse.Namespace:
 
 def main() -> int:
     """Score every watched column and write the report."""
+    console.use_utf8_for_output()
     options = parse_command_line()
     if not options.dataset.exists():
         raise SystemExit(f"{options.dataset} not found; run `dvc pull`")

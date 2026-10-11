@@ -32,7 +32,7 @@ from sklearn.ensemble import HistGradientBoostingClassifier
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
-from src.bank import contract, evaluate, features, splits
+from src.bank import console, contract, evaluate, features, splits
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 DATASET = PROJECT_ROOT / "data" / "bank" / "bank-additional-full.csv"
@@ -104,6 +104,7 @@ def score_with_duration(training_frame: pd.DataFrame,
 
 def main() -> int:
     """Train, evaluate against the baselines, and write the report."""
+    console.use_utf8_for_output()
     options = parse_command_line()
     if not options.dataset.exists():
         raise SystemExit(

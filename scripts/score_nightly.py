@@ -27,7 +27,7 @@ import pandas as pd
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
-from src.bank import cloud, contract, features, freshness, promotion
+from src.bank import cloud, console, contract, features, freshness, promotion
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 REPORTS_DIR = PROJECT_ROOT / "reports"
@@ -71,21 +71,6 @@ def parse_command_line() -> argparse.Namespace:
     return parser.parse_args()
 
 
-def use_utf8_for_output() -> None:
-    """Print UTF-8 whatever the console's own encoding is.
-
-    The scenes print em dashes and times signs. Windows gives a redirected stream the
-    system code page rather than UTF-8, so `python scripts/run_demo.py > out.txt`
-    raised UnicodeEncodeError on a teammate's machine while the same command printed
-    fine to his terminal. Reconfiguring here costs nothing and removes the difference.
-    """
-    for stream in (sys.stdout, sys.stderr):
-        try:
-            stream.reconfigure(encoding="utf-8")
-        except (AttributeError, ValueError):
-            # Already wrapped, or not a real stream. Nothing to do.
-            pass
-
 
 def write_metrics(metrics: dict) -> None:
     """Record one run's metrics where the dashboard reads them."""
@@ -95,7 +80,7 @@ def write_metrics(metrics: dict) -> None:
 
 def main() -> int:
     """Run the nightly job, publishing a list only if every gate allows it."""
-    use_utf8_for_output()
+    console.use_utf8_for_output()
     options = parse_command_line()
     started_at = datetime.now(timezone.utc)
     now = datetime.fromisoformat(options.now) if options.now else started_at

@@ -27,6 +27,8 @@ import pandas as pd
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
+from src.bank import console
+
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 DATASET = PROJECT_ROOT / "data" / "bank" / "bank-additional-full.csv"
 REPORTS_DIR = PROJECT_ROOT / "reports"
@@ -75,7 +77,8 @@ def run_nightly_job(export_path: Path, call_budget: int,
         command.append("--skip-freshness-gate")
 
     completed = subprocess.run(command, cwd=PROJECT_ROOT,
-                               capture_output=True, text=True, timeout=600)
+                               capture_output=True, text=True,
+                               encoding="utf-8", timeout=600)
     print(completed.stdout)
     if completed.returncode not in (0, 2):
         print(completed.stderr)
@@ -88,6 +91,7 @@ def run_nightly_job(export_path: Path, call_budget: int,
 
 def main() -> int:
     """Run both halves of the demonstration and write the report."""
+    console.use_utf8_for_output()
     options = parse_command_line()
     if not DATASET.exists():
         raise SystemExit(f"{DATASET} not found; run `dvc pull`")

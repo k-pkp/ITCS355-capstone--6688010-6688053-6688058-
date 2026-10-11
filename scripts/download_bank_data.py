@@ -32,6 +32,8 @@ from pathlib import Path
 
 import requests
 
+from src.bank import console
+
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 BANK_DIR = PROJECT_ROOT / "data" / "bank"
 
@@ -86,6 +88,7 @@ def extract_wanted_csv(archive_bytes: bytes) -> bytes:
 
 def main() -> int:
     """Download the archive, extract the chosen CSV, and record what was taken."""
+    console.use_utf8_for_output()
     options = parse_command_line()
     options.out_dir.mkdir(parents=True, exist_ok=True)
     destination = options.out_dir / OUTPUT_NAME

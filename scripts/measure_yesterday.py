@@ -28,7 +28,7 @@ import pandas as pd
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
-from src.bank import cloud, contract
+from src.bank import cloud, console, contract
 
 INCOMING_OBJECT = "capstone/incoming/contacts.csv"
 CALL_LIST_PREFIX = "capstone/call-lists"
@@ -47,6 +47,7 @@ def parse_command_line() -> argparse.Namespace:
 
 def main() -> int:
     """Compare who was called against who subscribed."""
+    console.use_utf8_for_output()
     options = parse_command_line()
 
     export_path = Path("/tmp/measured-export.csv")

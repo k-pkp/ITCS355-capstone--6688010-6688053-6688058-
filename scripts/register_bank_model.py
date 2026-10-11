@@ -29,7 +29,7 @@ import pandas as pd
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 from scripts.train_bank import SEED, TRAINING_WINDOW_ROWS, recent_window, train_model
-from src.bank import contract, evaluate, features, gate, promotion, splits
+from src.bank import console, contract, evaluate, features, gate, promotion, splits
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 DATASET = PROJECT_ROOT / "data" / "bank" / "bank-additional-full.csv"
@@ -60,7 +60,8 @@ def run_git(arguments: list[str]) -> tuple[int, str]:
     try:
         result = subprocess.run(
             ["git"] + arguments,
-            cwd=PROJECT_ROOT, capture_output=True, text=True, timeout=10,
+            cwd=PROJECT_ROOT, capture_output=True, text=True,
+            encoding="utf-8", timeout=10,
         )
     except (OSError, subprocess.SubprocessError):
         return 1, ""
@@ -192,6 +193,7 @@ def register_in_mlflow(model, lineage: dict, model_name: str) -> str:
 
 def main() -> int:
     """Train a candidate, ask the gate, and register only on a pass."""
+    console.use_utf8_for_output()
     options = parse_command_line()
     if not options.dataset.exists():
         raise SystemExit(f"{options.dataset} not found; run `dvc pull`")
