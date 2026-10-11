@@ -26,11 +26,14 @@ import argparse
 import hashlib
 import io
 import json
+import sys
 import zipfile
 from datetime import datetime, timezone
 from pathlib import Path
 
 import requests
+
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 from src.bank import console
 
