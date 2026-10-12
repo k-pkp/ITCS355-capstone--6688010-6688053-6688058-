@@ -47,6 +47,73 @@ The one-page proposal, as submitted at M2, is [`PROPOSAL.md`](PROPOSAL.md).
 
 ---
 
+## The workflow, end to end
+
+Three phases. The dotted arrow is the one the project is about: when the feeder stops, the
+export is never rewritten, it ages past the freshness limit, and the scorer refuses.
+
+```mermaid
+flowchart TD
+    subgraph build["BUILD — reproducible training"]
+        direction TB
+        UCI["UCI archive"] --> DOWNLOAD["download_bank_data.py<br/>verifies the archive sha256"]
+        DOWNLOAD --> DATASET["bank-additional-full.csv<br/>41,188 rows · sha256 74adfc57…<br/>versioned with DVC, not git"]
+        DATASET --> SPLIT["split_by_time 60/20/20<br/>stored order, never shuffled"]
+        SPLIT --> TRAIN["train_bank.py<br/>train-window 4000 · seed 20260101"]
+        FEATURES["features.py → 65 columns<br/>duration dropped, it is leakage"] --> TRAIN
+        TRAIN --> MODEL["bank-model.joblib<br/>sha256 70b8a611…"]
+        MODEL --> GATE{"release gate<br/>beats every baseline by 0.05<br/>no month worse than random<br/>10 lineage fields · tree committed"}
+        GATE -->|"refused"| NOTREG["nothing is registered<br/>the reasons are written down"]
+        GATE -->|"passed"| REGISTRY["MLflow registry version 2<br/>approved-model.json records the hash"]
+    end
+
+    subgraph ship["SHIP — three scheduled jobs, every night"]
+        direction TB
+        SPLIT -. "only the held-out fifth is replayed" .-> SOURCE["replay source, 8,239 rows"]
+        SCHED1["Cloud Scheduler 01:50"] --> FEEDER["feed_next_day.py<br/>takes the next 600 rows"]
+        SOURCE --> FEEDER
+        CURSOR["replay cursor in the bucket"] --> FEEDER
+        FEEDER --> INCOMING["incoming/contacts.csv"]
+        FEEDER -. "campaign exhausted, nothing is written" .-> INCOMING
+        SCHED2["Cloud Scheduler 02:00"] --> VERTEX["Vertex AI custom job, spot"]
+        INCOMING --> VERTEX
+        VERTEX --> G1{"input present?"}
+        G1 -->|"no"| X1["exit 1"]
+        G1 -->|"yes"| G2{"fresher than 24h?"}
+        G2 -->|"no"| X2["exit 2 · STALE"]
+        G2 -->|"yes"| G3{"contract holds?"}
+        G3 -->|"no"| X3["exit 3 · CONTRACT"]
+        G3 -->|"yes"| G4{"model hash approved?"}
+        REGISTRY --> G4
+        G4 -->|"no"| X5["exit 5 · UNAPPROVED"]
+        G4 -->|"yes"| RANK["rank 600, call the top 16.67%"]
+        RANK --> PUBLISHED["call-lists/call-list-DATE.csv"]
+    end
+
+    subgraph operate["OPERATE — the loop closes the next morning"]
+        direction TB
+        SCHED3["Cloud Scheduler 02:10"] --> MEASURE["measure_yesterday.py<br/>opens the known outcomes"]
+        PUBLISHED --> MEASURE
+        MEASURE --> METRICS["Cloud Monitoring<br/>published · realised lift · input age"]
+        RANK --> METRICS
+        X2 --> METRICS
+        METRICS --> DASH["dashboard, six panels"]
+        METRICS --> ALERT{"published below 1?"}
+        ALERT -->|"yes"| INCIDENT["incident opens<br/>email notification channel"]
+        DRIFT["check_drift.py · PSI vs the training window"] --> METRICS
+    end
+```
+
+**Reading the refusal paths.** Four of the five ways out of the nightly job publish nothing.
+Each writes its reason to `reports/nightly-metrics.json`, prints it to Cloud Logging, and
+emits `published = 0` — which is the condition the alert watches, so a refusal raises an
+incident rather than passing silently.
+
+**Where it actually ran.** The dotted path is not hypothetical. The replay reached the end
+of the held-out period on 2 October 2026, the feeder stopped writing, and the scorer
+refused on staleness for seven consecutive nights. The incident opened by itself at
+02:05:34 on 4 October.
+
 ## Reproduce everything
 
 ```bash
@@ -280,7 +347,7 @@ src/bank/          contract, splits, features, evaluate, gate, freshness, monito
 Dockerfile         the image the scheduled job runs, base pinned by digest
 scripts/           download, train, register, score_nightly, check_drift,
                    feed_next_day and measure_yesterday (the replay), demos
-tests/             59 tests
+tests/             76 tests
 reports/           training, drift, gate decision, cost, model card, the demo
 ```
 
