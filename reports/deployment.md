@@ -55,7 +55,7 @@ already visible. The failure this project is built around is a job that *succeed
 publishes the wrong list. The metric that separates those two is whether a list was
 published at all, and the refusal paths are the only thing that can drive it to zero.
 
-## The run that is live now
+## The first scheduled run
 
 The image was rebuilt after the model was retrained and registered, and the scheduled job
 was repointed at the new digest. Forced to run, it produced:
@@ -69,6 +69,26 @@ was repointed at the new digest. Forced to run, it produced:
 
 The list it published is ranked by `bank-call-list-ranker` version 1 — the version the gate
 admitted, with its lineage in [`bank-registry.md`](bank-registry.md).
+
+That run scored the whole 3,000-row export, hence 500 rows at a call share of 16.67%. The
+replay was switched to 600-row nights shortly afterwards so that a fortnight of operation
+could be watched instead of waited for, and the call budget scales with the export — see
+[`replay.md`](replay.md). **The object named above now holds 100 rows**, because the
+scheduled run that night overwrote it; call lists are named by date, and this forced run and
+the first scheduled run fell on the same date.
+
+## What the deployment then did, for twelve nights and then seven
+
+The schedule ran unattended from 21 September. Thirty-six consecutive SUCCEEDED jobs — twelve
+nights of feeder, scorer and measure — published twelve call lists at a mean realised lift of
+1.279×. Then the held-out period ran out, and the scorer refused on staleness for seven
+consecutive nights while an alert stayed open.
+
+That is the most useful evidence this project has, because nobody arranged it. It is written
+up with the Cloud Logging output and the metric series in
+[`incident-2026-10-04.md`](incident-2026-10-04.md), including why Vertex reports the seven
+refused nights as `JOB_STATE_FAILED` and why the metric rather than the job state is the
+thing the alert watches.
 
 ## Three failures on the way to a working deployment
 

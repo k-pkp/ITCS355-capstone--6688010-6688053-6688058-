@@ -292,6 +292,18 @@ The alert was proved rather than configured: an export carrying an unknown job c
 uploaded, the contract refused it, and the `published` series went 1 to 0. Working:
 [`reports/deployment.md`](reports/deployment.md).
 
+**Then it happened for real.** Twelve nights later the replay reached the end of the held-out
+period, the feeder had nothing to publish, the export aged past 24 hours, and the scoring job
+refused on staleness — seven consecutive nights, unattended, with `input_age_hours` climbing
+24.15 → 48.27 → 72.15 → 96.15 → 120.16 → 144.25 → 168.17 and an incident open in Cloud
+Monitoring from 4 October 02:05:34 that was still open eight days later. Nobody staged it and
+nobody intervened. Logs, metric series and the limits it exposes:
+[`reports/incident-2026-10-04.md`](reports/incident-2026-10-04.md).
+
+That report also explains why Vertex shows **twenty-one FAILED jobs** after thirty-six
+SUCCEEDED ones: a refusal exits non-zero on purpose, so Vertex cannot tell a refusal from a
+crash. The job state is not the signal; the metric is.
+
 ---
 
 ## "The data is not live. How does it run day by day?"
@@ -305,18 +317,29 @@ ages past 24 hours, and the scorer refuses.** The failure the project is built a
 happens for real instead of being simulated by editing a timestamp.
 
 And the replay can do one thing a live system cannot. The campaign finished in 2010, so the
-outcomes are already known, and last night's published list can be scored **the next
-morning**:
+outcomes are already known, and last night's list is scored **ten minutes after it is
+published** rather than weeks later:
 
 ```
-export:  600 customers, 44 subscribed (7.3%)
-called:  100 customers, 10 subscribed (10.0%)
-realised lift: 1.36x  (+2.7 subscriptions against calling the same 100 at random)
+call list for 2026-10-02
+  export:  439 customers, 205 subscribed (46.7%)
+  called:  73 customers, 51 subscribed (69.9%)
+  realised lift: 1.50x  (+16.9 subscriptions against calling the same 73 at random)
 ```
 
 A live campaign waits weeks for those labels — Lab 3 hit exactly that wall, which is why its
-canary had to use a label-free proxy too weak to see anything. Full design, including why
-the replay stops rather than looping: [`reports/replay.md`](reports/replay.md).
+canary had to use a label-free proxy too weak to see anything.
+
+**The replay has since been run to the end**: fourteen nights, twelve of them on the schedule
+in the cloud, at **mean realised lift 1.294× (sd 0.260, standard error 0.069)** against the
+gate's estimate of 1.34×. The difference is 0.046 — about two thirds of one standard error,
+so the held-out prediction and what the system actually did cannot be told apart at fourteen
+nights. One of those nights came in at **0.577×**, worse than calling at random, and it is in
+the series rather than left out of it.
+
+Then the held-out period ran out, and the system did what it was designed to do without
+anyone watching — see below. Full design, including why the replay stops rather than looping:
+[`reports/replay.md`](reports/replay.md).
 
 ---
 
@@ -348,7 +371,8 @@ Dockerfile         the image the scheduled job runs, base pinned by digest
 scripts/           download, train, register, score_nightly, check_drift,
                    feed_next_day and measure_yesterday (the replay), demos
 tests/             76 tests
-reports/           training, drift, gate decision, cost, model card, the demo
+reports/           training, drift, gate decision, cost, model card, the demo,
+                   deployment, the replay, the 4 October incident, teardown proof
 ```
 
 The reasoning behind each step — what it is, why it is needed, what breaks without it, and
@@ -396,3 +420,12 @@ silent:
   without it.
 - **No group-fairness measurement.** Noted in the [model card](reports/model-card.md)
   rather than omitted.
+- **The alert is delivered but not routed.** It reaches one email address, with no rotation,
+  no severity on the policy and nothing that pages anybody. The evidence for this limit is in
+  the project's own data: the incident of 4 October stayed open for seven nights, so the
+  honest answer to "who would have seen this at 3am" is nobody. Detection and delivery are
+  built and proved; getting an alert to a human who is awake is not.
+- **The replay is finite, and it has been used up.** Fourteen nights of held-out rows are
+  gone; the cursor is marked exhausted and the scheduled jobs are paused. Restarting means
+  extending the source, not resetting the cursor — a reset would replay rows the model was
+  trained on and make every realised-lift number after it meaningless.

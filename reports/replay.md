@@ -77,28 +77,58 @@ beats live data**, and it is the respect that matters for demonstrating monitori
 The model never sees that column. `features.EXCLUDED_COLUMNS` drops the target before
 anything is scored, which is what makes the measurement a measurement rather than a circle.
 
-## The loop, closed, on a schedule
+## The loop, closed, on a schedule — and then run to the end
 
-Two replayed days have been through the full chain in the cloud — feeder, scorer, then the
-measurement — and the realised lift is emitted as a metric like any other:
+The replay has now been run out completely. **Twelve scheduled nights** went through the full
+chain in the cloud — feeder, scorer, measurement — and then the held-out period was exhausted
+and the system refused for seven nights running. The whole thing is written up with the logs
+and the metric series in [`incident-2026-10-04.md`](incident-2026-10-04.md).
 
-| Replay day | Export | Called | Subscribed | Realised lift |
-|--:|--:|--:|--:|--:|
-| 1 | 600 | 100 | 10 of 100, against 7.3% | **1.36×** |
-| 2 | 600 | 100 | — | **1.40×** |
+The twelve nights, read back from the `realised_lift` series in Cloud Monitoring:
 
-**The gate's estimate was 1.34×**, measured within contact months on the held-out period.
-The two days the system has actually run came in at 1.36× and 1.40×.
+| Replay day | Call list | Export | Called | Realised lift |
+|--:|---|--:|--:|--:|
+| 3 | `call-list-2026-09-21.csv` | 600 | 100 | 1.241× |
+| 4 | `call-list-2026-09-22.csv` | 600 | 100 | **0.577×** |
+| 5 | `call-list-2026-09-23.csv` | 600 | 100 | 1.000× |
+| 6 | `call-list-2026-09-24.csv` | 600 | 100 | 1.420× |
+| 7 | `call-list-2026-09-25.csv` | 600 | 100 | 1.195× |
+| 8 | `call-list-2026-09-26.csv` | 600 | 100 | 1.241× |
+| 9 | `call-list-2026-09-27.csv` | 600 | 100 | 1.631× |
+| 10 | `call-list-2026-09-28.csv` | 600 | 100 | 1.352× |
+| 11 | `call-list-2026-09-29.csv` | 600 | 100 | 1.307× |
+| 12 | `call-list-2026-09-30.csv` | 600 | 100 | 1.338× |
+| 13 | `call-list-2026-10-01.csv` | 600 | 100 | 1.552× |
+| 14 | `call-list-2026-10-02.csv` | **439** | 73 | 1.496× |
 
-That agreement is the point. A held-out score is a *prediction about the future*, and almost
-every ML project ships one and never finds out whether it was true. Here the prediction and
-the outcome can be put side by side within a day of each other, and so far the estimate is
-holding.
+Replay days 1 and 2 were run by hand on 21 September, before the schedule took over, so
+their call lists were overwritten by the scheduled run that night — which is why the bucket
+holds twelve objects for fourteen replay days. Day 14 is short because the held-out period
+does not divide by 600: the feeder published `rows 7,800–8,239`, 439 customers, and then the
+cursor was marked exhausted.
 
-It will not hold forever, and the project says where it breaks: on the validation period —
+Twelve nights: **mean 1.279×, sd 0.279, standard error 0.081**. Adding the two runs forced by
+hand on 21 September before the schedule took over — 1.364× and 1.404× — gives fourteen
+measurements at **mean 1.294×, sd 0.260, standard error 0.069**.
+
+**The gate's estimate was 1.34×**, measured within contact months on the held-out period. The
+fourteen nights the system actually ran came in 0.046 below it, which is about two thirds of
+one standard error — the prediction and the outcome cannot be told apart at this sample size.
+
+That is the point. A held-out score is a *prediction about the future*, and almost every ML
+project ships one and never finds out whether it was true. Here the prediction and the
+outcome were put side by side and the estimate held.
+
+It held *on average*. **One night in twelve came in at 0.577×** — the ranked list did worse
+than calling the same hundred people at random. A single night is not evidence that the model
+is broken, and that is exactly why the gate is a decision about a distribution rather than
+about one number; but it is on the record, because a report that showed only the eleven good
+nights would be describing a different system.
+
+And it will not hold forever. The project says where it breaks: on the validation period —
 the crisis onset — the same model scores 1.07× and falls below 1.0 in two months of four.
-When the replay walks into a stretch like that, these two series should separate, and the
-drift monitor should say so first.
+When a replay walks into a stretch like that, these two series should separate, and the drift
+monitor should say so first.
 
 ## Calling a share, not a number
 
