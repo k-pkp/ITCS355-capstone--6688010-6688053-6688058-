@@ -83,7 +83,9 @@ flowchart TD
         G2 -->|"no"| X2["exit 2 · STALE"]
         G2 -->|"yes"| G3{"contract holds?"}
         G3 -->|"no"| X3["exit 3 · CONTRACT"]
-        G3 -->|"yes"| G4{"model hash approved?"}
+        G3 -->|"yes"| G3B{"model file present?"}
+        G3B -->|"no"| X4["exit 4"]
+        G3B -->|"yes"| G4{"model hash approved?"}
         REGISTRY --> G4
         G4 -->|"no"| X5["exit 5 · UNAPPROVED"]
         G4 -->|"yes"| RANK["rank 600, call the top 16.67%"]
@@ -104,15 +106,18 @@ flowchart TD
     end
 ```
 
-**Reading the refusal paths.** Four of the five ways out of the nightly job publish nothing.
+**Reading the refusal paths.** The nightly job has six ways out, and **five of them publish
+nothing** — exit 1 through 5, one per gate, in the order the code checks them.
 Each writes its reason to `reports/nightly-metrics.json`, prints it to Cloud Logging, and
 emits `published = 0` — which is the condition the alert watches, so a refusal raises an
 incident rather than passing silently.
 
-**Where it actually ran.** The dotted path is not hypothetical. The replay reached the end
-of the held-out period on 2 October 2026, the feeder stopped writing, and the scorer
-refused on staleness for seven consecutive nights. The incident opened by itself at
-02:05:34 on 4 October.
+**Where it actually ran.** The dotted path is not hypothetical. The feeder wrote its last
+export at `2026-10-02 18:52Z`, reported the held-out period exhausted on its next run, and
+never rewrote the file. The scorer refused on staleness for **seven consecutive nights**,
+with `input_age_hours` climbing 24.15 to 168.17, and the incident opened by itself at
+02:05:34 on 4 October. Logs and metric series:
+[`reports/incident-2026-10-04.md`](reports/incident-2026-10-04.md).
 
 ## Reproduce everything
 
