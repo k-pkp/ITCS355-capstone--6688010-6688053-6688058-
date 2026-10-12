@@ -1,7 +1,9 @@
 # Model card — call-list ranker
 
-**Status: registered**, `bank-call-list-ranker` version 1, with nine lineage fields
-(`reports/bank-registry.md`). An earlier candidate was refused by the gate at 1.34× against
+**Status: registered**, `bank-call-list-ranker` **version 2**, with 13 lineage fields
+(`reports/bank-registry.md`). Version 1 was the same model with 11 fields, before
+`model_sha256` and `git_tree_clean` were added; version 2 is the one `approved-model.json`
+approves and the one the nightly job verifies by hash before it loads anything. An earlier candidate was refused by the gate at 1.34× against
 a 1.80× baseline; that comparison ranked the whole test period at once, which credited the
 baseline with sorting the calendar — information the nightly job does not have. Working:
 `reports/bank-export-evaluation.md`.

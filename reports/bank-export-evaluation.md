@@ -148,6 +148,9 @@ GATE PASS
 
 Registered as `bank-call-list-ranker` version 1, with lineage — see
 [`bank-registry.md`](bank-registry.md) and [`bank-gate-decision.json`](bank-gate-decision.json).
+The model was later retrained at a further commit and registered as **version 2**, which adds
+`model_sha256` and `git_tree_clean` and is the version the deployment serves. The gate
+decision above is unchanged by that: same seed, same dataset hash, same 1.3396.
 
 ---
 

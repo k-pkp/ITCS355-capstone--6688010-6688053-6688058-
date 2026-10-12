@@ -62,9 +62,9 @@ flowchart TD
         SPLIT --> TRAIN["train_bank.py<br/>train-window 4000 · seed 20260101"]
         FEATURES["features.py → 65 columns<br/>duration dropped, it is leakage"] --> TRAIN
         TRAIN --> MODEL["bank-model.joblib<br/>sha256 70b8a611…"]
-        MODEL --> GATE{"release gate<br/>beats every baseline by 0.05<br/>no month worse than random<br/>10 lineage fields · tree committed"}
+        MODEL --> GATE{"release gate<br/>beats every baseline by 0.05<br/>no month worse than random<br/>lineage recorded · tree committed"}
         GATE -->|"refused"| NOTREG["nothing is registered<br/>the reasons are written down"]
-        GATE -->|"passed"| REGISTRY["MLflow registry version 2<br/>approved-model.json records the hash"]
+        GATE -->|"passed"| REGISTRY["MLflow registry version 2<br/>13 lineage fields<br/>approved-model.json records the hash"]
     end
 
     subgraph ship["SHIP — three scheduled jobs, every night"]
@@ -254,9 +254,16 @@ candidate  within month: lift 1.34x across 13 months, worst month 1.25x
 GATE PASS
 ```
 
-Registered as `bank-call-list-ranker` version 1 with nine lineage fields:
-[`reports/bank-registry.md`](reports/bank-registry.md). Full working, including a
-hypothesis that was tested and turned out wrong:
+Registered as `bank-call-list-ranker`. **Version 1** carried 11 lineage fields; the model
+was retrained at a later commit and registered as **version 2** with 13, adding
+`model_sha256` and `git_tree_clean` — the two fields that let the nightly job check which
+bytes it is about to serve. Both versions are written out of the registry itself by
+`scripts/describe_registry.py`: [`reports/bank-registry.md`](reports/bank-registry.md).
+
+**Version 2 is the approved one**, and `reports/approved-model.json` names it by hash. Both
+versions report the same `metric_lift` of 1.3396 from the same seed and the same dataset
+hash, which is the reproducibility claim being exercised rather than asserted. Full working,
+including a hypothesis that was tested and turned out wrong:
 [`reports/bank-export-evaluation.md`](reports/bank-export-evaluation.md).
 
 **The measured limit.** On the validation period — the crisis onset — the same model scores

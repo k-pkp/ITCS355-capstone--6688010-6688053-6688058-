@@ -67,8 +67,9 @@ was repointed at the new digest. Forced to run, it produced:
 | `published` metric | 1 at 01:58:45Z |
 | Duration | 12.31 s |
 
-The list it published is ranked by `bank-call-list-ranker` version 1 — the version the gate
-admitted, with its lineage in [`bank-registry.md`](bank-registry.md).
+The list it published is ranked by `bank-call-list-ranker` **version 2** — the version
+`approved-model.json` approves, with its 13 lineage fields in
+[`bank-registry.md`](bank-registry.md).
 
 That run scored the whole 3,000-row export, hence 500 rows at a call share of 16.67%. The
 replay was switched to 600-row nights shortly afterwards so that a fortnight of operation
