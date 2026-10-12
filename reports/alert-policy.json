@@ -1,0 +1,39 @@
+{
+    "name": "projects/itcs355-6688010/alertPolicies/12323129586046041369",
+    "displayName": "ITCS355 capstone \u2014 nightly run refused to publish",
+    "combiner": "OR",
+    "conditions": [
+        {
+            "conditionThreshold": {
+                "filter": "metric.type=\"custom.googleapis.com/itcs355/capstone/published\" resource.type=\"global\"",
+                "comparison": "COMPARISON_LT",
+                "thresholdValue": 1,
+                "duration": "0s",
+                "aggregations": [
+                    {
+                        "alignmentPeriod": "3600s",
+                        "perSeriesAligner": "ALIGN_MAX"
+                    }
+                ]
+            },
+            "displayName": "published dropped to 0",
+            "name": "projects/itcs355-6688010/alertPolicies/12323129586046041369/conditions/12323129586046039388"
+        }
+    ],
+    "documentation": {
+        "content": "The nightly call-list job did not publish a list. The most likely cause is a stale or missing customer export: the freshness gate refuses rather than publishing yesterday's list as though it were today's. Check gs://itcs355-6688010/capstone/incoming/contacts.csv and its update time.",
+        "mimeType": "text/markdown"
+    },
+    "notificationChannels": [
+        "projects/itcs355-6688010/notificationChannels/10305524844976757572"
+    ],
+    "enabled": true,
+    "creationRecord": {
+        "mutateTime": "2026-09-21T01:34:10.017355783Z",
+        "mutatedBy": "<account address redacted>"
+    },
+    "mutationRecord": {
+        "mutateTime": "2026-09-21T01:34:10.017355783Z",
+        "mutatedBy": "<account address redacted>"
+    }
+}

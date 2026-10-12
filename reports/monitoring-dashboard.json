@@ -1,0 +1,174 @@
+{
+  "displayName": "ITCS355 capstone — nightly call list",
+  "etag": "a39b96002961bee1585461e9761272bd",
+  "mosaicLayout": {
+    "columns": 12,
+    "tiles": [
+      {
+        "height": 4,
+        "widget": {
+          "title": "Published (1) or refused (0)",
+          "xyChart": {
+            "dataSets": [
+              {
+                "plotType": "LINE",
+                "targetAxis": "Y1",
+                "timeSeriesQuery": {
+                  "timeSeriesFilter": {
+                    "aggregation": {
+                      "alignmentPeriod": "3600s",
+                      "perSeriesAligner": "ALIGN_MAX"
+                    },
+                    "filter": "metric.type=\"custom.googleapis.com/itcs355/capstone/published\" resource.type=\"global\""
+                  }
+                }
+              }
+            ]
+          }
+        },
+        "width": 6
+      },
+      {
+        "height": 4,
+        "widget": {
+          "title": "Input age at scoring time (hours)",
+          "xyChart": {
+            "dataSets": [
+              {
+                "plotType": "LINE",
+                "targetAxis": "Y1",
+                "timeSeriesQuery": {
+                  "timeSeriesFilter": {
+                    "aggregation": {
+                      "alignmentPeriod": "3600s",
+                      "perSeriesAligner": "ALIGN_MAX"
+                    },
+                    "filter": "metric.type=\"custom.googleapis.com/itcs355/capstone/input_age_hours\" resource.type=\"global\""
+                  }
+                }
+              }
+            ]
+          }
+        },
+        "width": 6,
+        "xPos": 6
+      },
+      {
+        "height": 4,
+        "widget": {
+          "title": "Rows in / rows published",
+          "xyChart": {
+            "dataSets": [
+              {
+                "plotType": "LINE",
+                "targetAxis": "Y1",
+                "timeSeriesQuery": {
+                  "timeSeriesFilter": {
+                    "aggregation": {
+                      "alignmentPeriod": "3600s",
+                      "perSeriesAligner": "ALIGN_MAX"
+                    },
+                    "filter": "metric.type=\"custom.googleapis.com/itcs355/capstone/rows_in\" resource.type=\"global\""
+                  }
+                }
+              },
+              {
+                "plotType": "LINE",
+                "targetAxis": "Y1",
+                "timeSeriesQuery": {
+                  "timeSeriesFilter": {
+                    "aggregation": {
+                      "alignmentPeriod": "3600s",
+                      "perSeriesAligner": "ALIGN_MAX"
+                    },
+                    "filter": "metric.type=\"custom.googleapis.com/itcs355/capstone/rows_published\" resource.type=\"global\""
+                  }
+                }
+              }
+            ]
+          }
+        },
+        "width": 6,
+        "yPos": 4
+      },
+      {
+        "height": 4,
+        "widget": {
+          "title": "Run duration (seconds)",
+          "xyChart": {
+            "dataSets": [
+              {
+                "plotType": "LINE",
+                "targetAxis": "Y1",
+                "timeSeriesQuery": {
+                  "timeSeriesFilter": {
+                    "aggregation": {
+                      "alignmentPeriod": "3600s",
+                      "perSeriesAligner": "ALIGN_MAX"
+                    },
+                    "filter": "metric.type=\"custom.googleapis.com/itcs355/capstone/duration_seconds\" resource.type=\"global\""
+                  }
+                }
+              }
+            ]
+          }
+        },
+        "width": 6,
+        "xPos": 6,
+        "yPos": 4
+      },
+      {
+        "height": 4,
+        "widget": {
+          "title": "Realised lift of the published list",
+          "xyChart": {
+            "dataSets": [
+              {
+                "plotType": "LINE",
+                "targetAxis": "Y1",
+                "timeSeriesQuery": {
+                  "timeSeriesFilter": {
+                    "aggregation": {
+                      "alignmentPeriod": "300s",
+                      "perSeriesAligner": "ALIGN_MEAN"
+                    },
+                    "filter": "metric.type=\"custom.googleapis.com/itcs355/capstone/realised_lift\" resource.type=\"global\""
+                  }
+                }
+              }
+            ]
+          }
+        },
+        "width": 6,
+        "yPos": 8
+      },
+      {
+        "height": 4,
+        "widget": {
+          "title": "Subscriptions gained over calling at random",
+          "xyChart": {
+            "dataSets": [
+              {
+                "plotType": "LINE",
+                "targetAxis": "Y1",
+                "timeSeriesQuery": {
+                  "timeSeriesFilter": {
+                    "aggregation": {
+                      "alignmentPeriod": "300s",
+                      "perSeriesAligner": "ALIGN_MEAN"
+                    },
+                    "filter": "metric.type=\"custom.googleapis.com/itcs355/capstone/subscriptions_gained\" resource.type=\"global\""
+                  }
+                }
+              }
+            ]
+          }
+        },
+        "width": 6,
+        "xPos": 6,
+        "yPos": 8
+      }
+    ]
+  },
+  "name": "projects/878299096221/dashboards/44e3c10a-2dab-4849-8a5e-8bd03728712c"
+}
