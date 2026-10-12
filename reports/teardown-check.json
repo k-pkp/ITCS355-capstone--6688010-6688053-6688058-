@@ -1,5 +1,5 @@
 {
-  "checked_at_utc": "2026-10-10T13:17:26.183813+00:00",
+  "checked_at_utc": "2026-10-12T06:31:52.926604+00:00",
   "project": "itcs355-6688010",
   "region": "asia-southeast1",
   "findings": {
@@ -15,26 +15,18 @@
     },
     "scheduler_jobs": {
       "checked": true,
-      "count": 3,
-      "resources": [
-        "itcs355-capstone-feeder",
-        "itcs355-capstone-nightly",
-        "itcs355-capstone-measure"
-      ]
+      "count": 0,
+      "resources": []
     },
     "dashboards": {
       "checked": true,
-      "count": 1,
-      "resources": [
-        "projects/878299096221/dashboards/44e3c10a-2dab-4849-8a5e-8bd03728712c"
-      ]
+      "count": 0,
+      "resources": []
     },
     "container_images": {
       "checked": true,
-      "count": 1,
-      "resources": [
-        "asia-southeast1-docker.pkg.dev/itcs355-6688010/itcs355/itcs355-capstone"
-      ],
+      "count": 0,
+      "resources": [],
       "kept_for_other_coursework": [
         "asia-southeast1-docker.pkg.dev/itcs355-6688010/itcs355/itcs355-lab1",
         "asia-southeast1-docker.pkg.dev/itcs355-6688010/itcs355/itcs355-lab2",
@@ -45,18 +37,11 @@
     },
     "alert_policies": {
       "checked": true,
-      "count": 1,
-      "resources": [
-        "projects/itcs355-6688010/alertPolicies/12323129586046041369"
-      ]
+      "count": 0,
+      "resources": []
     }
   },
-  "still_running": [
-    "scheduler_jobs",
-    "dashboards",
-    "container_images",
-    "alert_policies"
-  ],
+  "still_running": [],
   "deliberately_kept": {
     "dvc_remote": "gs://itcs355-6688010/capstone/dvc",
     "why": "object storage holding the versioned dataset. Costs fractions of a baht per month, and a teardown that can delete the data is a teardown nobody dares run."

@@ -111,6 +111,37 @@ which requires Python 3.12, while the image is 3.11. Fixed by compiling with
 by design, and `/app/data` is owned by root. The job now writes its working copy to `/tmp`
 and publishes to the bucket, which is where the output belongs anyway.
 
+## Torn down on 12 October
+
+Everything above has been deleted. The course requires it, and leaving cloud resources
+running is a marked deduction, so anyone opening the console after 12 October 06:31Z finds
+nothing — no schedulers, no dashboard, no alert policy, no capstone image.
+
+```
+vertex_endpoints     0 running
+vertex_models        0 running
+scheduler_jobs       0 running
+dashboards           0 running
+container_images     0 running (5 kept for the labs)
+alert_policies       0 running
+```
+
+`scripts/teardown_capstone.sh --yes` deleted them and then
+[`teardown_verify.py`](../scripts/teardown_verify.py) re-queried each API and wrote
+[`teardown-check.json`](teardown-check.json), whose `still_running` list is empty. The
+verification is separate from the deletion on purpose: a teardown script that reports its own
+success is a teardown script nobody can check.
+
+Two things were kept deliberately, and the record says so rather than hiding them: the five
+**lab** image repositories, because the labs are a separate submission that is not finished,
+and `gs://itcs355-6688010/capstone/dvc`, the versioned dataset, at fractions of a baht a
+month — a teardown that can delete the data is a teardown nobody dares run.
+
+What survives the deletion is the evidence, not the infrastructure:
+[`alert-policy.json`](alert-policy.json), [`monitoring-dashboard.json`](monitoring-dashboard.json),
+the image digest in [`image-digest.txt`](image-digest.txt), and the logs and metric series
+quoted in [`incident-2026-10-04.md`](incident-2026-10-04.md).
+
 ## Cost
 
 The schedule runs 30 times a month, about a minute each, on spot `e2-standard-4` at

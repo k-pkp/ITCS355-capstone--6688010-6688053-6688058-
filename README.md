@@ -276,8 +276,10 @@ cost 0.0167. PSI opens an investigation; it does not rank incidents.
 
 ## Deployment
 
-The nightly job runs on Google Cloud, on a schedule, and reports to a dashboard with an
-alert that has already fired on a real refusal.
+The nightly job ran on Google Cloud, on a schedule, reporting to a dashboard with an alert
+that fired on a real refusal. It ran for nineteen nights and was **torn down on 12 October**,
+because the course requires it: `reports/teardown-check.json` lists nothing still running.
+The console is empty; the evidence is in `reports/`.
 
 | | |
 |---|---|
