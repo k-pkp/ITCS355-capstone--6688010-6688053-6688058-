@@ -43,7 +43,8 @@ Reproduce it: `python scripts/demo_stale_input.py`.
 
 ---
 
-The one-page proposal, as submitted at M2, is [`PROPOSAL.md`](PROPOSAL.md).
+The one-page proposal from M2 is [`PROPOSAL.md`](PROPOSAL.md). Its claims and figures are
+the ones submitted, with only the punctuation tidied since.
 
 ---
 
@@ -150,7 +151,9 @@ content-addressing working as intended, and it is why the environment is pinned.
 An environment of its own matters here rather than being a formality: the release gate
 approved a model by its sha256, and the nightly job refuses any model whose bytes differ. A
 stray scikit-learn version retrains to different bytes and the job correctly refuses to
-publish. `requirements.txt` is pinned with hashes so that cannot happen quietly.
+publish. `requirements.txt` is pinned with hashes so that cannot happen quietly, and
+`requirements-dev.txt` pins the same set plus the linter so CI installs what the image
+installs rather than resolving whatever is newest that morning.
 
 Nothing above needs cloud credentials. `dvc pull` needs access to the GCS remote, and the
 download script is the alternative and produces a byte-identical file.

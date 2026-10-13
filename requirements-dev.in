@@ -1,0 +1,12 @@
+# What CI installs, which is the runtime lock plus the linter.
+#
+# CI used to `pip install pandas numpy scikit-learn joblib pytest ruff` with no versions at
+# all, which made the one job that is supposed to catch "it worked on my laptop" the only
+# part of the project not pinned. A CI run that resolves whatever is newest can pass on a
+# library the image has never seen, or fail on one nobody chose.
+#
+# Compiled with:
+#     uv pip compile requirements-dev.in --generate-hashes --python-version 3.11 \
+#         -o requirements-dev.txt
+-r requirements.in
+ruff==0.16.6

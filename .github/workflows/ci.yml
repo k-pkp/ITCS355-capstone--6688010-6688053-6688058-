@@ -21,10 +21,13 @@ jobs:
         with:
           python-version: "3.11"
 
+      # Installed from the same hash-pinned lock the container image is built from, plus
+      # the linter. Resolving these afresh would mean the one job that exists to catch
+      # "it worked on my laptop" was itself unpinned.
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install pandas numpy scikit-learn joblib pytest ruff
+          pip install --require-hashes -r requirements-dev.txt
 
       - name: Lint
         run: ruff check src scripts tests
