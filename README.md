@@ -1,12 +1,12 @@
-# ITCS355 Capstone — call-list ranker
+# ITCS355 Capstone, call-list ranker
 
 Ranks a bank's customer contact list so agents call the most promising people first,
 published as a nightly batch to a schedule on Google Cloud. Built to demonstrate an
 operational system, not a model.
 
 **The model appeared to lose to a single column, and the interesting part is that the
-measurement was wrong.** Sorting customers by the interbank rate — a number identical for
-everyone contacted in the same week — beat the model when a whole year of calls was ranked
+measurement was wrong.** Sorting customers by the interbank rate, a number identical for
+everyone contacted in the same week, beat the model when a whole year of calls was ranked
 in one go. It cannot beat anything inside one night's export, which is the only thing the
 job ever ranks. Fixing what was measured, and retraining on a recent window, changed the
 gate's verdict from refuse to pass. Both runs are in the repository.
@@ -22,7 +22,7 @@ score distribution, and no error anywhere. The dashboard stays green.
 In the morning, agents call the people they called yesterday.
 
 Nothing in an ordinary pipeline notices, because nothing in an ordinary pipeline asks *when*
-the data is from — it asks whether the read succeeded, and the read succeeded.
+the data is from. It asks whether the read succeeded, and the read succeeded.
 
 **The control is a freshness gate that publishes nothing rather than something plausible.**
 A missing call list is an obvious problem somebody fixes in ten minutes. A wrong one is
@@ -34,7 +34,7 @@ Demonstrated, both ways, on the same file:
 |---|---|---|
 | Exit code | 0 | 2 |
 | Published | **500 customers** | nothing |
-| Score range | 0.147 – 0.447, median 0.219 | — |
+| Score range | 0.147 to 0.447, median 0.219 | none, nothing was scored |
 | Errors | none | none |
 | Age of input | 26 hours | 26 hours |
 
@@ -107,9 +107,9 @@ flowchart TD
 ```
 
 **Reading the refusal paths.** The nightly job has six ways out, and **five of them publish
-nothing** — exit 1 through 5, one per gate, in the order the code checks them.
+nothing**, exit 1 through 5, one per gate, in the order the code checks them.
 Each writes its reason to `reports/nightly-metrics.json`, prints it to Cloud Logging, and
-emits `published = 0` — which is the condition the alert watches, so a refusal raises an
+emits `published = 0`, which is the condition the alert watches, so a refusal raises an
 incident rather than passing silently.
 
 **Where it actually ran.** The dotted path is not hypothetical. The feeder wrote its last
@@ -152,7 +152,7 @@ approved a model by its sha256, and the nightly job refuses any model whose byte
 stray scikit-learn version retrains to different bytes and the job correctly refuses to
 publish. `requirements.txt` is pinned with hashes so that cannot happen quietly.
 
-Nothing above needs cloud credentials. `dvc pull` needs access to the GCS remote; the
+Nothing above needs cloud credentials. `dvc pull` needs access to the GCS remote, and the
 download script is the alternative and produces a byte-identical file.
 
 ---
@@ -163,13 +163,13 @@ download script is the alternative and produces a byte-identical file.
 |---|---|
 | Source | UCI Bank Marketing, `bank-additional-full` variant |
 | Rows | 41,188 · 20 input columns |
-| Period | May 2008 – November 2010, in stored order |
-| Licence | **CC BY 4.0** — Moro, Rita & Cortez (2014), DOI 10.24432/C5K306 |
-| Versioning | DVC; SHA-256 recorded in `data/bank/dataset.json` |
+| Period | May 2008 to November 2010, in stored order |
+| Licence | **CC BY 4.0**. Moro, Rita & Cortez (2014), DOI 10.24432/C5K306 |
+| Versioning | DVC, with the SHA-256 recorded in `data/bank/dataset.json` |
 
 **Which variant matters.** The commonly used `bank-full.csv` has 45,211 rows and no
 macroeconomic columns. This one carries the Euribor rate, employment variation and price
-indices recorded at call time — and because the campaign ran in time order straight through
+indices recorded at call time, and because the campaign ran in time order straight through
 the financial crisis, those columns contain a real distribution shift rather than a
 simulated one.
 
@@ -191,7 +191,7 @@ Splitting this dataset at random hides the entire shift:
 
 The wrong method produces the reassuring number. So the prohibition is a test, not a
 comment: `tests/bank/test_splits.py::test_the_time_split_exposes_the_distribution_shift`
-asserts the *presence* of a difference, which is backwards on purpose — on this file,
+asserts the *presence* of a difference, which is backwards on purpose. On this file,
 halves that look alike mean somebody shuffled.
 
 Two more guarded the same way:
@@ -222,7 +222,7 @@ GATE FAIL
 ```
 
 **One column with no per-customer information was beating the model.** `euribor3m` is the
-interbank rate — identical for everyone contacted in the same week. It cannot tell one
+interbank rate, identical for everyone contacted in the same week. It cannot tell one
 customer from another. That should stop work, not prompt a retrain.
 
 It won because the measurement let it answer a different question. Ranking 8,239 rows that
@@ -230,7 +230,7 @@ span months by `-euribor3m` sorts them, near enough, **by date**, and the late m
 when people subscribed. The deployed job never gets that chance: it ranks one export, whose
 customers were all contacted at about the same time.
 
-Measured the way the job actually runs — inside one contact month:
+Measured the way the job actually runs, inside one contact month:
 
 | Ranking, within one month | Lift | Worst month |
 |---|--:|--:|
@@ -246,17 +246,17 @@ batch should be.
 A second, independent fix: the model now trains on the most recent 4,000 rows rather than
 all 24,712, because the campaign spans a financial crisis and older rows describe a
 different world. The window size was chosen on the validation period. That change alone
-raises even the old whole-period score from 1.34× to 1.97×, which clears the old gate too
-— the model was undertrained *and* the measurement was wrong.
+raises even the old whole-period score from 1.34× to 1.97×, which clears the old gate too.
+The model was undertrained *and* the measurement was wrong.
 
 ```
 candidate  within month: lift 1.34x across 13 months, worst month 1.25x
 GATE PASS
 ```
 
-Registered as `bank-call-list-ranker`. **Version 1** carried 11 lineage fields; the model
-was retrained at a later commit and registered as **version 2** with 13, adding
-`model_sha256` and `git_tree_clean` — the two fields that let the nightly job check which
+Registered as `bank-call-list-ranker`. **Version 1** carried 11 lineage fields. The model
+was then retrained at a later commit and registered as **version 2** with 13, adding
+`model_sha256` and `git_tree_clean`, the two fields that let the nightly job check which
 bytes it is about to serve. Both versions are written out of the registry itself by
 `scripts/describe_registry.py`: [`reports/bank-registry.md`](reports/bank-registry.md).
 
@@ -266,7 +266,7 @@ hash, which is the reproducibility claim being exercised rather than asserted. F
 including a hypothesis that was tested and turned out wrong:
 [`reports/bank-export-evaluation.md`](reports/bank-export-evaluation.md).
 
-**The measured limit.** On the validation period — the crisis onset — the same model scores
+**The measured limit.** On the validation period, the crisis onset, the same model scores
 1.07× within month and falls below 1.0 in two of its four months. This model's skill does
 not survive a regime break. That is why the drift monitor exists, and it is in the
 [model card](reports/model-card.md) as a known limit rather than a footnote.
@@ -275,14 +275,14 @@ not survive a regime break. That is why the drift monitor exists, and it is in t
 
 ## Monitoring
 
-`python scripts/check_drift.py` — 6 of 7 watched columns above the PSI threshold of 0.20.
+`python scripts/check_drift.py` finds 6 of 7 watched columns above the PSI threshold of 0.20.
 
 **This run is expected to alert.** A drift check finding nothing here would mean the
 detector was broken, not that the world was calm.
 
 One limit carried over from Lab 4: **PSI measures how far the input moved, not how much the
 model minds.** A shift scoring 0.383 cost 0.0100 ROC AUC there, while one scoring 0.2627
-cost 0.0167. PSI opens an investigation; it does not rank incidents.
+cost 0.0167. PSI opens an investigation. It does not rank incidents.
 
 ---
 
@@ -291,14 +291,14 @@ cost 0.0167. PSI opens an investigation; it does not rank incidents.
 The nightly job ran on Google Cloud, on a schedule, reporting to a dashboard with an alert
 that fired on a real refusal. It ran for nineteen nights and was **torn down on 12 October**,
 because the course requires it: `reports/teardown-check.json` lists nothing still running.
-The console is empty; the evidence is in `reports/`.
+The console is empty, and the evidence is in `reports/`.
 
 | | |
 |---|---|
 | Schedule | Cloud Scheduler `itcs355-capstone-nightly`, `0 2 * * *` Asia/Bangkok |
 | Compute | Vertex AI custom job, `e2-standard-4`, spot |
 | Image | `itcs355-capstone@sha256:e55bc7bd…c166dd6`, base pinned by digest, non-root |
-| Identity | `itcs355-train` — read and write storage, submit jobs, nothing else |
+| Identity | `itcs355-train`, which can read and write storage and submit jobs, nothing else |
 | Output | `gs://itcs355-6688010/capstone/call-lists/call-list-YYYY-MM-DD.csv` |
 | Alert | fires when `published < 1`, i.e. when a run **refused** rather than when it crashed |
 
@@ -308,7 +308,7 @@ uploaded, the contract refused it, and the `published` series went 1 to 0. Worki
 
 **Then it happened for real.** Twelve nights later the replay reached the end of the held-out
 period, the feeder had nothing to publish, the export aged past 24 hours, and the scoring job
-refused on staleness — seven consecutive nights, unattended, with `input_age_hours` climbing
+refused on staleness for seven consecutive nights, unattended, with `input_age_hours` climbing
 24.15 → 48.27 → 72.15 → 96.15 → 120.16 → 144.25 → 168.17 and an incident open in Cloud
 Monitoring from 4 October 02:05:34 that was still open eight days later. Nobody staged it and
 nobody intervened. Logs, metric series and the limits it exposes:
@@ -316,7 +316,7 @@ nobody intervened. Logs, metric series and the limits it exposes:
 
 That report also explains why Vertex shows **twenty-one FAILED jobs** after thirty-six
 SUCCEEDED ones: a refusal exits non-zero on purpose, so Vertex cannot tell a refusal from a
-crash. The job state is not the signal; the metric is.
+crash. The job state is not the signal. The metric is.
 
 ---
 
@@ -324,7 +324,7 @@ crash. The job state is not the signal; the metric is.
 
 The campaign is **replayed**. A separate scheduled job publishes the next slice of the
 held-out period every night at 01:50, and the scoring job treats it as today's export at
-02:00. The rows are real; only the calendar is synthetic.
+02:00. The rows are real, and only the calendar is synthetic.
 
 Two jobs rather than one, on purpose: **if the feeder fails, nothing rewrites the export, it
 ages past 24 hours, and the scorer refuses.** The failure the project is built around then
@@ -341,18 +341,18 @@ call list for 2026-10-02
   realised lift: 1.50x  (+16.9 subscriptions against calling the same 73 at random)
 ```
 
-A live campaign waits weeks for those labels — Lab 3 hit exactly that wall, which is why its
+A live campaign waits weeks for those labels. Lab 3 hit exactly that wall, which is why its
 canary had to use a label-free proxy too weak to see anything.
 
 **The replay has since been run to the end**: fourteen nights, twelve of them on the schedule
 in the cloud, at **mean realised lift 1.294× (sd 0.260, standard error 0.069)** against the
-gate's estimate of 1.34×. The difference is 0.046 — about two thirds of one standard error,
+gate's estimate of 1.34×. The difference is 0.046, about two thirds of one standard error,
 so the held-out prediction and what the system actually did cannot be told apart at fourteen
 nights. One of those nights came in at **0.577×**, worse than calling at random, and it is in
 the series rather than left out of it.
 
 Then the held-out period ran out, and the system did what it was designed to do without
-anyone watching — see below. Full design, including why the replay stops rather than looping:
+anyone watching, as described below. Full design, including why the replay stops rather than looping:
 [`reports/replay.md`](reports/replay.md).
 
 ---
@@ -364,7 +364,7 @@ anyone watching — see below. Full design, including why the replay stops rathe
 | Always-on managed endpoint | ~6,400 |
 | **Three nightly batch jobs on spot (chosen)** | **~7.70** |
 
-5.79 of that is compute — three jobs at 1.93 — and the rest is storage and the container
+5.79 of that is compute, three jobs at 1.93, and the rest is storage and the container
 registry. Both figures in the table are totals, so they compare.
 
 Three jobs rather than one step: the feeder, the scorer and the measurement are separate so
@@ -389,8 +389,8 @@ reports/           training, drift, gate decision, cost, model card, the demo,
                    deployment, the replay, the 4 October incident, teardown proof
 ```
 
-The reasoning behind each step — what it is, why it is needed, what breaks without it, and
-how the choice was checked — is recorded in the project's commit messages, and the measured
+The reasoning behind each step, meaning what it is, why it is needed, what breaks without
+it, and how the choice was checked, is recorded in the project's commit messages. The measured
 evidence for every claim above is in `reports/`.
 
 ---
@@ -401,7 +401,7 @@ Each of these was found by something in this repository rather than by review, a
 silent:
 
 1. **The drift detector reported a column that moved completely as perfectly stable.**
-   `nr.employed` has three distinct values in the training window; quantile edges collapsed
+   `nr.employed` has three distinct values in the training window. Quantile edges collapsed
    to two, both were overwritten with infinities, and every row landed in one bucket. PSI
    read 0.0000 for a column whose reference and current ranges do not even overlap. It now
    reads 9.89.
@@ -411,7 +411,7 @@ silent:
 3. **The model lost to a single column**, which nobody would have known without measuring a
    baseline first.
 4. **An empty export crashed the nightly job**, reaching the model and raising a library
-   error about array shapes — a stack trace saying nothing about the export having failed,
+   error about array shapes, a stack trace saying nothing about the export having failed,
    arriving for whoever is on call. It is now a contract rule with a readable refusal.
 
 ---
@@ -419,15 +419,15 @@ silent:
 ## What is not done
 
 - **The data is a fixed historical snapshot, and the system is not live.** This makes the
-  pipeline strongly reproducible — one commit names one dataset by hash, and a fresh clone
+  pipeline strongly reproducible, because one commit names one dataset by hash and a fresh clone
   plus `dvc pull` returns it byte-identically. It also means two things worth saying plainly:
   the nightly job scores a slice of the same 2010 file rather than a genuinely new export,
-  and the drift detected is a real shift that happened in 2008–2010 being **replayed**, not
-  one observed as it happens. The shift is real data rather than injected noise, which is
-  why this dataset was chosen; it is not live.
+  and the drift detected is a real shift that happened in 2008 to 2010 being **replayed**,
+  not one observed as it happens. The shift is real data rather than injected noise, which is
+  why this dataset was chosen. It is still not live.
 - **No billing export**, so the cost figures are rebuilt from Lab 5's measured rates
   and this project's own job durations rather than read off an invoice. The deployment
-  itself is real; the accounting of it is measurement.
+  itself is real. The accounting of it is measurement.
 - **The registry is a local SQLite file**, not a hosted one, so "registered" means
   registered on this machine. Its contents are written out to
   [`reports/bank-registry.md`](reports/bank-registry.md) so the claim can be checked
@@ -438,8 +438,8 @@ silent:
   no severity on the policy and nothing that pages anybody. The evidence for this limit is in
   the project's own data: the incident of 4 October stayed open for seven nights, so the
   honest answer to "who would have seen this at 3am" is nobody. Detection and delivery are
-  built and proved; getting an alert to a human who is awake is not.
+  built and proved. Getting an alert to a human who is awake is not.
 - **The replay is finite, and it has been used up.** Fourteen nights of held-out rows are
-  gone; the cursor is marked exhausted and the scheduled jobs are paused. Restarting means
-  extending the source, not resetting the cursor — a reset would replay rows the model was
+  gone, the cursor is marked exhausted and the scheduled jobs are paused. Restarting means
+  extending the source, not resetting the cursor, because a reset would replay rows the model was
   trained on and make every realised-lift number after it meaningless.

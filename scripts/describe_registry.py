@@ -34,7 +34,7 @@ def main() -> int:
         return 1
 
     lines = [
-        f"# Model registry — `{MODEL_NAME}`",
+        f"# Model registry for `{MODEL_NAME}`",
         "",
         "Written by `scripts/describe_registry.py` from the registry itself, so that the "
         "claim can be checked rather than taken on trust.",

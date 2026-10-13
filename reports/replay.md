@@ -24,7 +24,7 @@ the project's controls could never actually fire:
 | 02:00 | `itcs355-capstone-nightly` | reads it, checks its age, contract and model, publishes a call list |
 | 02:10 | `itcs355-capstone-measure` | scores that list against the outcomes the replay already knows, and emits the realised lift |
 
-A cursor in the bucket — `capstone/state/replay-cursor.json` — records how far the replay has
+A cursor in the bucket, `capstone/state/replay-cursor.json`, records how far the replay has
 reached. It lives in object storage rather than in the container, because the container is
 new every night and a cursor that resets every night is not a cursor.
 
@@ -38,8 +38,8 @@ The feeder could have been a first step inside the scoring job. Keeping it separ
 makes the freshness gate a real control rather than a demonstration:
 
 **If the feeder fails, nothing rewrites the export. It ages past 24 hours. The scorer
-refuses.** That is the failure the whole project is built around — an upstream export that
-did not arrive — happening for real, rather than being simulated by editing a timestamp.
+refuses.** That is the failure the whole project is built around, an upstream export that
+did not arrive, happening for real rather than being simulated by editing a timestamp.
 
 The same holds at the end of the replay. When the held-out period runs out the feeder
 publishes nothing and says so, rather than looping back to the start:
@@ -77,10 +77,10 @@ beats live data**, and it is the respect that matters for demonstrating monitori
 The model never sees that column. `features.EXCLUDED_COLUMNS` drops the target before
 anything is scored, which is what makes the measurement a measurement rather than a circle.
 
-## The loop, closed, on a schedule — and then run to the end
+## The loop, closed on a schedule, and then run to the end
 
 The replay has now been run out completely. **Twelve scheduled nights** went through the full
-chain in the cloud — feeder, scorer, measurement — and then the held-out period was exhausted
+chain in the cloud, meaning feeder, scorer and measurement, and then the held-out period was exhausted
 and the system refused for seven nights running. The whole thing is written up with the logs
 and the metric series in [`incident-2026-10-04.md`](incident-2026-10-04.md).
 
@@ -102,31 +102,31 @@ The twelve nights, read back from the `realised_lift` series in Cloud Monitoring
 | 14 | `call-list-2026-10-02.csv` | **439** | 73 | 1.496× |
 
 Replay days 1 and 2 were run by hand on 21 September, before the schedule took over, so
-their call lists were overwritten by the scheduled run that night — which is why the bucket
+their call lists were overwritten by the scheduled run that night, which is why the bucket
 holds twelve objects for fourteen replay days. Day 14 is short because the held-out period
-does not divide by 600: the feeder published `rows 7,800–8,239`, 439 customers, and then the
+does not divide by 600. The feeder published `rows 7,800-8,239`, 439 customers, and then the
 cursor was marked exhausted.
 
 Twelve nights: **mean 1.279×, sd 0.279, standard error 0.081**. Adding the two runs forced by
-hand on 21 September before the schedule took over — 1.364× and 1.404× — gives fourteen
+hand on 21 September before the schedule took over, at 1.364× and 1.404×, gives fourteen
 measurements at **mean 1.294×, sd 0.260, standard error 0.069**.
 
 **The gate's estimate was 1.34×**, measured within contact months on the held-out period. The
 fourteen nights the system actually ran came in 0.046 below it, which is about two thirds of
-one standard error — the prediction and the outcome cannot be told apart at this sample size.
+one standard error, so the prediction and the outcome cannot be told apart at this sample size.
 
 That is the point. A held-out score is a *prediction about the future*, and almost every ML
 project ships one and never finds out whether it was true. Here the prediction and the
 outcome were put side by side and the estimate held.
 
-It held *on average*. **One night in twelve came in at 0.577×** — the ranked list did worse
+It held *on average*. **One night in twelve came in at 0.577×**, where the ranked list did worse
 than calling the same hundred people at random. A single night is not evidence that the model
 is broken, and that is exactly why the gate is a decision about a distribution rather than
-about one number; but it is on the record, because a report that showed only the eleven good
+about one number. It is on the record anyway, because a report that showed only the eleven good
 nights would be describing a different system.
 
-And it will not hold forever. The project says where it breaks: on the validation period —
-the crisis onset — the same model scores 1.07× and falls below 1.0 in two months of four.
+And it will not hold forever. The project says where it breaks. On the validation period,
+the crisis onset, the same model scores 1.07× and falls below 1.0 in two months of four.
 When a replay walks into a stretch like that, these two series should separate, and the drift
 monitor should say so first.
 
@@ -134,7 +134,7 @@ monitor should say so first.
 
 The replayed night is 600 customers, not the real campaign's ~3,000, so that a fortnight of
 operation can be watched rather than waited for. The call budget therefore scales with the
-export — `--call-share 0.1667`, the same 500-out-of-3,000 the evaluation measures at —
+export, using `--call-share 0.1667`, the same 500-out-of-3,000 the evaluation measures at,
 rather than staying at a fixed 500.
 
 A fixed 500 against an export of 600 would mean calling five customers in six, and a list
@@ -146,5 +146,5 @@ reported success while doing nothing.
 It is not live data, and the README says so. A replay cannot surprise anyone: the shift it
 walks through already happened, and we know where it goes. What it demonstrates is that the
 **operational** system runs day after day, refuses when it should, and can measure its own
-output — which is what the course asks for. The brief asks for deployed inference "online or
+output, which is what the course asks for. The brief asks for deployed inference "online or
 batch", not for a live feed.

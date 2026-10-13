@@ -1,4 +1,4 @@
-# Model registry — `bank-call-list-ranker`
+# Model registry for `bank-call-list-ranker`
 
 Written by `scripts/describe_registry.py` from the registry itself, so that the claim can be checked rather than taken on trust.
 

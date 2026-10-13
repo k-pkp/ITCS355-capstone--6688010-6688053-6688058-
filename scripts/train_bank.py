@@ -176,7 +176,7 @@ def main() -> int:
     joblib.dump(model, options.out_dir / "bank-model.joblib")
 
     lines = [
-        "# Training report — call-list ranker",
+        "# Training report for the call-list ranker",
         "",
         f"Seed {SEED}. Split in stored campaign order: {split.describe()}.",
         f"Trained on the most recent {len(training_frame):,} rows before the test period.",
@@ -187,7 +187,7 @@ def main() -> int:
         "",
         "This is the measurement the deployed job is judged by. It ranks the calls made "
         "within a single month against each other, because that is the only comparison "
-        "the job is ever asked to make — it receives one export and decides who in that "
+        "the job is ever asked to make. It receives one export and decides who in that "
         "export to call first.",
         "",
         "| Ranking | Lift, weighted across months | Worst month | Months measured |",
@@ -217,7 +217,8 @@ def main() -> int:
         "",
         "Kept because the gap between this table and the one above is the main finding of "
         "the project, not an embarrassment to be tidied away. Ranking the whole period "
-        "rewards a ranking for sorting the calendar — information the job does not have, "
+        "rewards a ranking for sorting the calendar, which is information the job does "
+        "not have, "
         "because every customer in one export was contacted at roughly the same time.",
         "",
         "| Ranking | Subscriptions in top | Hit rate | Lift over random |",
@@ -245,7 +246,7 @@ def main() -> int:
         "",
         "That difference is not available at prediction time. `duration` is how long the "
         "call lasted, and the call has not happened when the list is built. The second "
-        "model is never registered and never deployed; it exists to put a number on the "
+        "model is never registered and never deployed. It exists to put a number on the "
         "trap, because 'duration is leakage' is an assertion and this is an argument.",
         "",
         "`tests/bank/test_features.py::test_duration_never_reaches_the_model` is what "

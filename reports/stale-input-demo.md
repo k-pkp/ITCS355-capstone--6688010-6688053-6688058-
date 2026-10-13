@@ -2,19 +2,19 @@
 
 Both runs below scored **the same file**: a valid customer export of 3,000 rows, aged 26 hours. Nothing about its contents is wrong. Only its age is.
 
-## Run 1 — without the freshness gate
+## Run 1, without the freshness gate
 
 - exit code **0**
 - published: **True**
 - rows published: **500**
-- score range: 0.147 to 0.4474, median 0.2191
+- score range: 0.1678 to 0.7553, median 0.3072
 - errors: none
 
 **The job succeeded.** It produced a call list of exactly the expected length, with a score distribution that looks like every other night's, and reported nothing wrong. A dashboard watching row counts, run duration, score ranges or exit codes sees a completely healthy run.
 
 In the morning, agents call the people they called yesterday.
 
-## Run 2 — with the freshness gate
+## Run 2, with the freshness gate
 
 - exit code **2**
 - published: **False**
@@ -35,4 +35,4 @@ The limit is 24 hours, from the freshness requirement in the proposal: the list 
 
 ## Guarded by
 
-`tests/bank/test_freshness.py` — ten tests, including the boundary pinned from both sides, because a later change from `<=` to `<` would move it silently.
+`tests/bank/test_freshness.py` has ten tests, including the boundary pinned from both sides, because a later change from `<=` to `<` would move it silently.

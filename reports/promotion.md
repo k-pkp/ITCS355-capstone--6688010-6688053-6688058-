@@ -35,7 +35,7 @@ published 500 customers
 ```
 
 Nothing was wrong with the substituted model. It loaded, it scored, it would have published
-a call list. It was simply not the one anybody approved — which is exactly the failure that
+a call list. It was simply not the one anybody approved, which is exactly the failure that
 no amount of testing the model itself can catch.
 
 ## 2. A candidate must beat the model already serving
@@ -45,7 +45,7 @@ than the one it replaces passed as long as it cleared `euribor3m`. Each release 
 small step backwards while every release looked like a pass.
 
 The incumbent is now **re-scored on the same test period** and handed to the gate as another
-baseline — re-scored rather than read from its recorded lift, because two numbers produced
+baseline, re-scored rather than read from its recorded lift, because two numbers produced
 at different times from different data are not comparable.
 
 **Proved** by retraining the identical configuration and asking again:
@@ -63,7 +63,7 @@ A retrain that changes nothing is refused. Before this, it would have been promo
 ## 3. The recorded commit must be the code that trained the model
 
 `git rev-parse HEAD` answers just as confidently on a dirty tree, so the lineage could name
-a commit whose code is not what ran. Populated, plausible and wrong — harder to spot than
+a commit whose code is not what ran. Populated, plausible and wrong is harder to spot than
 Lab 2's `git_commit: "unknown"`, because it looks like a real answer.
 
 ```
@@ -89,5 +89,5 @@ refusal.
 
 The approval record is a file in the repository, so it is only as trustworthy as the
 repository. In a real system it would be signed, or the registry would be the authority and
-the job would query it. The check as written catches an accident — a stale image, a wrong
-build, a file copied over — and would not stop someone who could edit both files.
+the job would query it. The check as written catches an accident, such as a stale image, a
+wrong build or a file copied over, and would not stop someone who could edit both files.

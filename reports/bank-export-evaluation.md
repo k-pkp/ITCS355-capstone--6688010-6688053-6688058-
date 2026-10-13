@@ -1,6 +1,6 @@
 # What the gate was measuring, and why it was the wrong thing
 
-The gate refused the model. It was right to, given what it measured — and what it measured
+The gate refused the model. It was right to, given what it measured, and what it measured
 was a question the deployed job is never asked. Finding that out changed the answer.
 
 This report is the working. Every number was produced by running the code.
@@ -29,7 +29,7 @@ Because the measurement let it answer a different question.
 
 The test period runs from a time when euribor was about 1.30 down to about 0.63, and
 subscriptions rose steeply as the rate fell. Sorting 8,239 customers by `-euribor3m` sorts
-them, near enough, **by date** — and putting the latest months first is a winning strategy
+them, near enough, **by date**, and putting the latest months first is a winning strategy
 when the latest months are when people said yes.
 
 The deployed job never gets that opportunity. It receives one export, of customers to be
@@ -53,7 +53,7 @@ Ranking inside single contact months, on the test period, using the final model:
 better than calling customers in no particular order**, which is what a column that is
 constant within a batch should be.
 
-Sweeping the block size shows the advantage draining away as the block shrinks — the model
+Sweeping the block size shows the advantage draining away as the block shrinks, and the model
 trained on 16,000 rows, blocks taken in campaign order:
 
 | Rows ranked together | Model | `euribor3m` |
@@ -72,7 +72,7 @@ One row of that table is the old gate's entire evidence.
 ## The second fix: train on a recent window
 
 The campaign spans a financial crisis. Training on all 24,712 early rows means fitting
-mostly to 2008–2009, when 4.8% of customers subscribed, and then ranking customers in a
+mostly to 2008 and 2009, when 4.8% of customers subscribed, and then ranking customers in a
 2010 world where 30.8% did.
 
 Window sizes were swept on the **validation** period. The test period was not involved in
@@ -89,7 +89,7 @@ this choice.
 
 Less history is better, monotonically, which is the shape a regime change produces.
 
-The window alone — before any change to the measurement — lifts the **whole-period** score
+The window alone, before any change to the measurement, lifts the **whole-period** score
 from 1.34x to **1.97x**, which clears the old gate's 1.85x requirement. So the model was
 genuinely undertrained *and* the measurement was genuinely wrong, and either fix alone
 would have changed the verdict.
@@ -114,12 +114,12 @@ reports the experiments that worked is reporting a selection, not a result.
 ## The limits, stated plainly
 
 **A month is not a night.** The dataset carries no date, only a month name, so the smallest
-honest block is a month's calls — bigger than a real nightly export. Inside a real export
+honest block is a month's calls, which is bigger than a real nightly export. Inside a real export
 `euribor3m` would be even flatter than it is here, so the baseline's true score is if
 anything *below* the 0.96x measured.
 
 **On the validation period the model does not beat the baseline.** Within month it reaches
-1.071x against the baseline's 1.155x — and in two of the four validation months it ranks
+1.071x against the baseline's 1.155x, and in two of the four validation months it ranks
 *below* 1.0, worse than random. The validation period is the crisis onset, the sharpest
 regime break in the data. The model is trained on the window before it, and that window
 does not describe it.
@@ -146,7 +146,7 @@ baseline   euribor3m: lift 0.96x
 GATE PASS
 ```
 
-Registered as `bank-call-list-ranker` version 1, with lineage — see
+Registered as `bank-call-list-ranker` version 1, with lineage. See
 [`bank-registry.md`](bank-registry.md) and [`bank-gate-decision.json`](bank-gate-decision.json).
 The model was later retrained at a further commit and registered as **version 2**, which adds
 `model_sha256` and `git_tree_clean` and is the version the deployment serves. The gate
@@ -160,7 +160,7 @@ The first gate was not broken. It ran, it computed correct arithmetic, it refuse
 and it wrote its reasons to a file. Everything about it worked except the question.
 
 A metric that is wrong in this way does not raise an error and does not look suspicious. It
-looks like a disappointing model — and the natural response to a disappointing model is to
+looks like a disappointing model, and the natural response to a disappointing model is to
 tune it, which would have spent days improving a number that was answering the wrong
 question. The tell was not in the code. It was that **one column with no per-customer
 information was winning**, which is the kind of result that should stop work rather than

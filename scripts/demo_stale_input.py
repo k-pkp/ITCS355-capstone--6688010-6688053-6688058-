@@ -118,7 +118,7 @@ def main() -> int:
         f"{options.rows:,} rows, aged {STALE_AGE_HOURS} hours. Nothing about its contents "
         f"is wrong. Only its age is.",
         "",
-        "## Run 1 — without the freshness gate",
+        "## Run 1, without the freshness gate",
         "",
         f"- exit code **{without_code}**",
         f"- published: **{without_metrics.get('published')}**",
@@ -134,7 +134,7 @@ def main() -> int:
         "",
         "In the morning, agents call the people they called yesterday.",
         "",
-        "## Run 2 — with the freshness gate",
+        "## Run 2, with the freshness gate",
         "",
         f"- exit code **{with_code}**",
         f"- published: **{with_metrics.get('published')}**",
@@ -163,7 +163,7 @@ def main() -> int:
         "",
         "## Guarded by",
         "",
-        "`tests/bank/test_freshness.py` — ten tests, including the boundary pinned from "
+        "`tests/bank/test_freshness.py` has ten tests, including the boundary pinned from "
         "both sides, because a later change from `<=` to `<` would move it silently.",
         "",
     ]

@@ -7,12 +7,12 @@ reused unchanged. Converted at 1 USD = 32.921586 THB.
 
 **4.60 THB per month**, forecast before anything was built. What runs costs about **7.70**,
 and the gap is not a mispriced machine: the design grew from one scheduled job to three, for
-reasons given in section 2. The per-job estimate was right; the job count was wrong.
+reasons given in section 2. The per-job estimate was right. The job count was wrong.
 
 ## 2. What the system costs to run
 
 Three scheduled jobs, not one. The estimate assumed a single nightly run and a weekly
-retrain; what was built feeds the day's export, scores it, and measures yesterday's list
+retrain. What was built feeds the day's export, scores it, and measures yesterday's list
 against the outcomes, while retraining is run on demand behind the release gate.
 
 | Line | Basis | THB / month |
@@ -33,7 +33,7 @@ on a timer.
 step inside the scoring job, for a third of the price. Keeping them apart is what makes the
 freshness gate a real control: if the feeder fails, nothing rewrites the export, it ages
 past 24 hours, and the scorer refuses. As one job, a feeder failure would simply fail the
-run — the easy failure, not the one this project is about.
+run, which is the easy failure, not the one this project is about.
 
 ## 3. The decision that dominates the bill
 
@@ -46,11 +46,11 @@ comparison rather than as a total:
 | **Three scheduled batch jobs on spot (chosen)** | **~7.70** | 1× |
 
 An endpoint bills **8.889 THB per hour whether or not anything calls it**. This workload is
-41,188 predictions once a day — 0.48 per second averaged out — and nobody waits on any of
+41,188 predictions once a day, which is 0.48 per second averaged out, and nobody waits on any of
 them: agents read the list at 08:00 whether it was computed at 02:00 or at 07:59.
 
 Buying an endpoint here would cost roughly 830 times more to deliver a result nobody reads
-any sooner. The ratio fell from 1,400× only because we added two more jobs; the argument is
+any sooner. The ratio fell from 1,400× only because we added two more jobs, and the argument is
 unchanged, and a comparison that survives tripling one side of it is a comparison worth
 making.
 
@@ -69,7 +69,7 @@ The figure that does change decisions is the one in section 3.
 
 **The registry is a cost, and debugging is what grows it.** In Lab 5 the container registry
 reached 3.17 GB and became the second largest line in the bill. 0.9 GB of that arrived in a
-single afternoon, from pushing the same tag three times while fixing a pipeline — each push
+single afternoon, from pushing the same tag three times while fixing a pipeline. Each push
 left the previous version behind as an untagged image. A debugging session is a storage
 cost.
 
@@ -84,7 +84,7 @@ less.
 ## 6. One optimisation, applied
 
 **Spot compute for both the nightly batch and retraining**, at 3.860 THB/h against 7.076
-on-demand — a 45% discount.
+on-demand, a 45% discount.
 
 The trade is that Google can reclaim the machine with little warning. It is acceptable here
 because the job is idempotent and short: a reclaimed run is re-run from the same input and
@@ -103,7 +103,7 @@ and the two can differ.
 The quantities are no longer estimates from local runs. The jobs run on the schedule, and
 the recorded scoring runs took 10.65 s, 3.03 s and 12.31 s on spot `e2-standard-4` at 3.860
 THB/hour. Thirty runs a month at the slowest of those is **1.93 THB/month** for the scorer,
-which is the figure in section 3 — the estimate made before building turned out right for
+which is the figure in section 3. The estimate made before building turned out right for
 the reason it was made, not by luck: this design's cost is dominated by how long a machine
 exists, and the machine exists for about ten seconds a day.
 

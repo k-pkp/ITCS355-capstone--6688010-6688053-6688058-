@@ -22,4 +22,4 @@ The campaign ran May 2008 to November 2010, through the financial crisis. The ma
 
 ## The limit of this measure
 
-PSI measures how far the input moved, not how much the model minds. Measured in Lab 4 on the same detector: a shift scoring 0.383 cost 0.0100 ROC AUC, while one scoring 0.2627 cost 0.0167 — the larger PSI did the smaller damage. So a PSI alert opens an investigation and does not rank incidents.
+PSI measures how far the input moved, not how much the model minds. Measured in Lab 4 on the same detector: a shift scoring 0.383 cost 0.0100 ROC AUC, while one scoring 0.2627 cost 0.0167. The larger PSI did the smaller damage. So a PSI alert opens an investigation and does not rank incidents.
