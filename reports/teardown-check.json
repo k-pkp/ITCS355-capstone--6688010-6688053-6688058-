@@ -1,5 +1,5 @@
 {
-  "checked_at_utc": "2026-10-12T06:31:52.926604+00:00",
+  "checked_at_utc": "2026-10-16T08:19:17.126278+00:00",
   "project": "itcs355-6688010",
   "region": "asia-southeast1",
   "findings": {
@@ -27,13 +27,8 @@
       "checked": true,
       "count": 0,
       "resources": [],
-      "kept_for_other_coursework": [
-        "asia-southeast1-docker.pkg.dev/itcs355-6688010/itcs355/itcs355-lab1",
-        "asia-southeast1-docker.pkg.dev/itcs355-6688010/itcs355/itcs355-lab2",
-        "asia-southeast1-docker.pkg.dev/itcs355-6688010/itcs355/itcs355-lab4",
-        "asia-southeast1-docker.pkg.dev/itcs355-6688010/itcs355/itcs355-lab5",
-        "asia-southeast1-docker.pkg.dev/itcs355-6688010/itcs355/itcs355-serve"
-      ]
+      "kept_for_other_coursework": [],
+      "note": "the Artifact Registry repository itself no longer exists, so there is nothing it could still be holding"
     },
     "alert_policies": {
       "checked": true,

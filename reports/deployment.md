@@ -123,7 +123,7 @@ vertex_endpoints     0 running
 vertex_models        0 running
 scheduler_jobs       0 running
 dashboards           0 running
-container_images     0 running (5 kept for the labs)
+container_images     0 running (0 kept for the labs)
 alert_policies       0 running
 ```
 
@@ -133,10 +133,18 @@ alert_policies       0 running
 verification is separate from the deletion on purpose: a teardown script that reports its own
 success is a teardown script nobody can check.
 
-Two things were kept deliberately, and the record says so rather than hiding them: the five
-**lab** image repositories, because the labs are a separate submission that is not finished,
-and `gs://itcs355-6688010/capstone/dvc`, the versioned dataset, at fractions of a baht a
-month, because a teardown that can delete the data is a teardown nobody dares run.
+At first one thing was kept besides the dataset, and the record said so rather than hiding
+it: the five **lab** image repositories, because the labs are a separate submission that was
+not finished at the time. Those were torn down on 16 October and the Artifact Registry
+repository was deleted with them, so the only thing left in the project is
+`gs://itcs355-6688010/capstone/dvc`, the versioned dataset, at fractions of a baht a month,
+because a teardown that can delete the data is a teardown nobody dares run.
+
+A deleted repository answers a check differently from an empty one. `gcloud` reports it as
+`NOT_FOUND` with a non-zero exit, which the verifier used to record as "could not check",
+turning the strongest possible evidence into an unverifiable line. It now reads a missing
+repository as zero images and says why, because nothing it could still be holding is the
+point of the check.
 
 What survives the deletion is the evidence, not the infrastructure:
 [`alert-policy.json`](alert-policy.json), [`monitoring-dashboard.json`](monitoring-dashboard.json),

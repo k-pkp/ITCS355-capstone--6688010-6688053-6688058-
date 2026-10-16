@@ -39,10 +39,12 @@ REGION = "asia-southeast1"
 # nobody dares run.
 DVC_REMOTE_PREFIX = f"gs://{GCP_PROJECT}/capstone/dvc"
 
-# The Artifact Registry repository is shared with the lab submissions, which are graded
-# separately and are not finished yet. These image repositories belong to those labs, so
-# a capstone teardown leaves them alone and says so rather than quietly counting them as
-# capstone resources left running. They are named here one by one, because a rule like
+# The Artifact Registry repository was shared with the lab submissions, which are graded
+# separately. While those were unfinished, a capstone teardown left their images alone and
+# said so, rather than quietly counting them as capstone resources left running. The labs
+# have since been torn down as well and the repository was deleted with them, so this list
+# now matches nothing -- it is kept because the partition is what makes the report readable
+# if any image is ever pushed here again. They are named one by one on purpose: a rule like
 # "anything without capstone in the name" would silently retain a capstone image that
 # happened to be named differently.
 IMAGES_KEPT_FOR_OTHER_COURSEWORK = (
@@ -77,6 +79,49 @@ def run_gcloud(arguments: list[str]) -> tuple[bool, str]:
         return False, completed.stderr.strip()[:300]
     return True, completed.stdout.strip()
 
+
+
+def check_container_images() -> dict:
+    """Return the capstone images still in Artifact Registry, and the labs' kept separate.
+
+    The repository itself can be gone rather than empty, and `gcloud` reports that as
+    NOT_FOUND with a non-zero exit. Treating it as a failed check would be wrong in the
+    worst direction: a deleted repository is the strongest possible evidence that no image
+    is left, and recording it as "could not check" turns proof into an unverifiable line.
+    """
+    worked, output = run_gcloud([
+        "artifacts", "docker", "images", "list",
+        f"{REGION}-docker.pkg.dev/{GCP_PROJECT}/itcs355",
+        "--include-tags", "--format=value(package)",
+    ])
+
+    if not worked:
+        if "NOT_FOUND" in output:
+            return {"checked": True, "count": 0, "resources": [],
+                    "kept_for_other_coursework": [],
+                    "note": "the Artifact Registry repository itself no longer exists, "
+                            "so there is nothing it could still be holding"}
+        return {"checked": False, "note": output}
+
+    # One row per version comes back, so the same package appears many times.
+    # Deduplicate while keeping the order it was listed in.
+    packages = []
+    for line in output.splitlines():
+        stripped = line.strip()
+        if stripped and stripped not in packages:
+            packages.append(stripped)
+
+    kept_for_labs = []
+    capstone_images = []
+    for package in packages:
+        if belongs_to_another_submission(package):
+            kept_for_labs.append(package)
+        else:
+            capstone_images.append(package)
+
+    return {"checked": True, "count": len(capstone_images),
+            "resources": capstone_images,
+            "kept_for_other_coursework": kept_for_labs}
 
 
 def check_alert_policies() -> dict:
@@ -161,9 +206,6 @@ def main() -> int:
                            "--format=value(name)"],
         "dashboards": ["monitoring", "dashboards", "list",
                        f"--project={GCP_PROJECT}", "--format=value(name)"],
-        "container_images": ["artifacts", "docker", "images", "list",
-                             f"{REGION}-docker.pkg.dev/{GCP_PROJECT}/itcs355",
-                             "--include-tags", "--format=value(package)"],
     }
 
     findings = {}
@@ -176,30 +218,32 @@ def main() -> int:
             print(f"  {name:<20} could not check: {output}")
             continue
 
-        # One row per version comes back for image repositories, so the same package
-        # appears many times. Deduplicate while keeping the order it was listed in.
         resources = []
         for line in output.splitlines():
             stripped = line.strip()
             if stripped and stripped not in resources:
                 resources.append(stripped)
-        if name == "container_images":
-            kept_for_labs = [image for image in resources
-                             if belongs_to_another_submission(image)]
-            resources = [image for image in resources
-                         if not belongs_to_another_submission(image)]
-            findings[name] = {"checked": True, "count": len(resources),
-                              "resources": resources,
-                              "kept_for_other_coursework": kept_for_labs}
-            print(f"  {name:<20} {len(resources)} running "
-                  f"({len(kept_for_labs)} kept for the labs)")
-        else:
-            findings[name] = {"checked": True, "count": len(resources),
-                              "resources": resources}
-            print(f"  {name:<20} {len(resources)} running")
+
+        findings[name] = {"checked": True, "count": len(resources),
+                          "resources": resources}
+        print(f"  {name:<20} {len(resources)} running")
 
         if resources:
             still_running.append(name)
+
+    # Images are checked on their own, because a repository that has been deleted outright
+    # answers differently from one that is merely empty. See check_container_images.
+    findings["container_images"] = check_container_images()
+    image_finding = findings["container_images"]
+    if image_finding.get("checked"):
+        kept_for_labs = image_finding.get("kept_for_other_coursework", [])
+        print(f"  {'container_images':<20} {image_finding['count']} running "
+              f"({len(kept_for_labs)} kept for the labs)")
+        if image_finding["count"]:
+            still_running.append("container_images")
+    else:
+        print(f"  {'container_images':<20} could not check: "
+              f"{image_finding.get('note')}")
 
     # Alert policies have no GA gcloud command, so they are read from the Monitoring API
     # directly rather than reported as "could not check" -- an unverifiable line in a
